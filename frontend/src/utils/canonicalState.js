@@ -1,26 +1,119 @@
 /**
- * Canonical Incident State Object Builder
+ * Canonical Incident & Thermal Intelligence State Object Builder
  * 
  * Ensures ONE AUTHORITATIVE SOURCE OF TRUTH across all presentation layers:
- * - Field Responder
- * - HSE Commander
- * - Plant Manager
- * - District Authority
- * - Executive Authority
- * - AI Emergency Copilot
- * - Fire Pre-Plan Document
- * 
- * All role views MUST consume this canonical state to avoid data inconsistency.
+ * - Top Global Header
+ * - Active Event Status Banner
+ * - Top HUDStats Metric Bar
+ * - Incident Intelligence Triage Drawer
+ * - Plant Map & Popups
+ * - Left Sidebar Status Badges
+ * - Multi-Role Views
+ * - Fire Pre-Plan & Executive Situation Brief
  */
 
-export function getCanonicalIncidentState({
-  simulationResult,
-  impactResult,
-  evacuationPlan,
-  resourcePlan,
-  activeWeather,
-  authorizationRecord = null
-}) {
+export function determineGlobalSystemState({
+  simulationResult = null,
+  impactResult = null,
+  thermalEvents = [],
+  facilities = []
+} = {}) {
+  // 1. INCIDENT_ACTIVE: Downstream REACT-X Emergency Response is Active
+  if (simulationResult && simulationResult.source_asset_id) {
+    return {
+      state: 'INCIDENT_ACTIVE',
+      label: 'INCIDENT ACTIVE',
+      badgeClass: 'bg-red-500/20 text-red-300 border-red-500/60 animate-pulse',
+      color: '#ef4444',
+      description: `Active consequence plume modeled for ${simulationResult.source_asset_id} (${simulationResult.chemical_name || 'Hazardous Chemical'}). Downwind ERPG hazard envelopes active.`,
+      activeEntity: simulationResult.source_asset_id,
+      isEmergency: true
+    };
+  }
+
+  // 2. CRITICAL: Confirmed high-priority abnormal thermal fire event
+  const criticalEvent = thermalEvents.find(e => e.risk_level === 'CRITICAL' || e.classification === 'INDUSTRIAL_FIRE');
+  if (criticalEvent) {
+    const isDemo = !criticalEvent.is_live_data;
+    return {
+      state: 'CRITICAL',
+      label: isDemo ? 'CRITICAL ALERT (SIMULATION)' : 'CRITICAL FIRE ALERT',
+      badgeClass: 'bg-red-500/20 text-red-300 border-red-500/60 animate-pulse',
+      color: '#ef4444',
+      description: `${isDemo ? '[DEMO BENCHMARK] ' : ''}High-power anomaly [${criticalEvent.event_id}] at ${criticalEvent.attributed_facility_name || 'Industrial Facility'}: FRP ${criticalEvent.frp_mw} MW exceeding critical fire thresholds.`,
+      activeEntity: criticalEvent.event_id,
+      isEmergency: false,
+      event: criticalEvent
+    };
+  }
+
+  // 3. ABNORMAL: Elevated thermal departure (Z >= 3.0 or abnormality score >= 50%)
+  const abnormalEvent = thermalEvents.find(e => e.abnormality_score >= 50.0 || e.is_abnormal);
+  if (abnormalEvent) {
+    const isDemo = !abnormalEvent.is_live_data;
+    return {
+      state: 'ABNORMAL',
+      label: isDemo ? 'ABNORMAL SURGE (SIMULATION)' : 'ABNORMAL THERMAL SURGE',
+      badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/50',
+      color: '#f59e0b',
+      description: `${isDemo ? '[DEMO BENCHMARK] ' : ''}Persistent source [${abnormalEvent.event_id}] exhibiting statistical baseline heat departure: Abnormality score ${abnormalEvent.abnormality_score.toFixed(1)}%.`,
+      activeEntity: abnormalEvent.event_id,
+      isEmergency: false,
+      event: abnormalEvent
+    };
+  }
+
+  // 4. WATCH: Candidate unclassified thermal observation detected
+  if (thermalEvents.length > 0) {
+    const hasLive = thermalEvents.some(e => e.is_live_data);
+    return {
+      state: 'WATCH',
+      label: hasLive ? 'SURVEILLANCE WATCH' : 'SURVEILLANCE WATCH (DEMO)',
+      badgeClass: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/40',
+      color: '#06b6d4',
+      description: `NASA FIRMS & VIIRS telemetry continuous: ${thermalEvents.length} regional thermal observations tracked across monitored industrial corridors.`,
+      activeEntity: null,
+      isEmergency: false
+    };
+  }
+
+  // 5. NORMAL: All thermal observations and facilities nominal
+  return {
+    state: 'NORMAL',
+    label: 'NORMAL',
+    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+    color: '#10b981',
+    description: 'All monitored industrial thermal signatures and facility flares operate within nominal baseline thresholds.',
+    activeEntity: null,
+    isEmergency: false
+  };
+}
+
+export function getCanonicalIncidentState(arg1 = {}, ...rest) {
+  let simulationResult = null;
+  let impactResult = null;
+  let evacuationPlan = null;
+  let resourcePlan = null;
+  let activeWeather = null;
+  let authorizationRecord = null;
+  let plantInfo = null;
+
+  // Flexible argument normalization
+  if (arg1 && typeof arg1 === 'object' && ('simulationResult' in arg1 || 'impactResult' in arg1 || 'activeWeather' in arg1 || 'plantInfo' in arg1)) {
+    simulationResult = arg1.simulationResult || null;
+    impactResult = arg1.impactResult || null;
+    evacuationPlan = arg1.evacuationPlan || null;
+    resourcePlan = arg1.resourcePlan || null;
+    activeWeather = arg1.activeWeather || null;
+    authorizationRecord = arg1.authorizationRecord || null;
+    plantInfo = arg1.plantInfo || null;
+  } else {
+    plantInfo = (arg1 && typeof arg1 === 'object' && arg1.name) ? arg1 : null;
+    if (rest.length > 0) {
+      [simulationResult, impactResult, evacuationPlan, resourcePlan, activeWeather, , authorizationRecord] = rest;
+    }
+  }
+
   const hasIncident = !!simulationResult;
 
   // 1. Asset & Chemical
@@ -31,7 +124,7 @@ export function getCanonicalIncidentState({
   const incident_type = simulationResult?.incident_type || (hasIncident ? 'PIPELINE_LEAK' : 'STANDBY');
   const release_rate_kg_s = simulationResult?.effective_release_rate_kg_s ?? simulationResult?.release_rate_kg_s ?? (hasIncident ? 15.0 : 0.0);
   const release_duration_min = simulationResult?.release_duration_min ?? 30;
-  const facility_name = 'PetroChem Complex Alpha';
+  const facility_name = plantInfo?.name || 'PetroChem Complex Alpha';
   const facility_sector = simulationResult?.source_sector || 'Sector A (Cryogenic Tank Farm)';
 
   // 2. Weather & Bearing Geometry (Explicit METEOROLOGICAL: FROM -> PLUME: TOWARD)
@@ -48,12 +141,12 @@ export function getCanonicalIncidentState({
     'S': 'N', 'SW': 'NE', 'W': 'E', 'NW': 'SE'
   };
   const plume_toward_cardinal = cardinalMap[wind_from_cardinal] || `${plume_toward_deg.toFixed(0)}°`;
-  const upwind_staging_deg = wind_from_deg; // Upwind staging post is facing the incoming wind
+  const upwind_staging_deg = wind_from_deg;
 
   // 3. Canonical Risk & Severity
   const risk = impactResult?.risk_assessment;
   const canonical_risk_score = risk?.overall_score ?? (hasIncident ? 55.3 : 0.0);
-  const canonical_severity = risk?.risk_category ?? (hasIncident ? 'HIGH' : 'NORMAL STANDBY');
+  const canonical_severity = risk?.risk_category ?? (hasIncident ? 'HIGH' : 'NORMAL');
   const canonical_severity_color = risk?.color || (
     canonical_severity === 'CRITICAL' ? '#ef4444' :
     canonical_severity === 'HIGH' ? '#f97316' :
@@ -163,40 +256,53 @@ export function getCanonicalIncidentState({
       max_red_reach_m,
       max_orange_reach_m,
       max_yellow_reach_m,
-      total_threat_area_m2
+      total_threat_area_m2,
+      summary_zones
     },
     max_red_reach_m,
     max_orange_reach_m,
     max_yellow_reach_m,
-    total_threat_area_m2,
 
-    // Evacuation
+    // Evacuation Routing
+    evacuation: {
+      status: evacuation_status,
+      recommended_assembly_point,
+      recommended_exit_gate,
+      distance_m: evacuation_distance_m,
+      time_min: evacuation_time_min,
+      rejected_routes_count
+    },
     recommended_assembly_point,
     recommended_exit_gate,
     evacuation_distance_m,
     evacuation_time_min,
     evacuation_status,
-    rejected_routes_count,
 
-    // Tactical
-    tactical_resource_state: {
+    // Tactical Resources
+    tactical: {
       lead_unit_name: lead_unit.resource_name,
       lead_unit_eta_min: lead_unit.estimated_arrival_min,
       firewater_demand_lpm,
       foam_demand_liters,
-      mandatory_ppe,
       standoff_m,
-      units_deployed_count
+      units_deployed_count,
+      mandatory_ppe
     },
     lead_unit_name: lead_unit.resource_name,
     lead_unit_eta_min: lead_unit.estimated_arrival_min,
     firewater_demand_lpm,
     foam_demand_liters,
-    mandatory_ppe,
     standoff_m,
     units_deployed_count,
+    mandatory_ppe,
 
-    // Governance & Containment
+    // Governance & SIS
+    governance: {
+      human_authorization_state,
+      approver_name,
+      approver_role,
+      approval_timestamp
+    },
     human_authorization_state,
     approver_name,
     approver_role,

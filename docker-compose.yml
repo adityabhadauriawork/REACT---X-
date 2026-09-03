@@ -1,0 +1,96 @@
+version: "3.9"
+
+# SIH26162 — REACT-X Docker Compose
+# Development: SQLite (default, no separate DB service needed)
+# Production: Set DATABASE_URL=postgresql://... and enable db service via profiles
+
+services:
+  # ─────────────────────────────────────────────
+  # BACKEND — FastAPI Python API (Port 8000)
+  # ─────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # NASA FIRMS — set your 32-character MAP_KEY here or in .env
+      NASA_FIRMS_MAP_KEY: "${NASA_FIRMS_MAP_KEY:-}"
+      NASA_FIRMS_BASE_URL: "${NASA_FIRMS_BASE_URL:-https://firms.modaps.eosdis.nasa.gov/api/area/csv}"
+
+      # Database — defaults to SQLite in /app/data/
+      DATABASE_URL: "${DATABASE_URL:-sqlite:////app/data/sih26162.db}"
+
+      # FIRMS polling
+      FIRMS_POLL_INTERVAL_MINUTES: "${FIRMS_POLL_INTERVAL_MINUTES:-15}"
+      FIRMS_DEFAULT_BBOX: "${FIRMS_DEFAULT_BBOX:-68.0,8.0,97.0,37.5}"
+
+      # ML
+      ML_ABSTENTION_THRESHOLD: "${ML_ABSTENTION_THRESHOLD:-0.45}"
+
+      # CORS — for development; restrict in production
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000}"
+
+    volumes:
+      # Persist SQLite database and ML model artifacts outside container
+      - sih26162_data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+        required: false
+
+  # ─────────────────────────────────────────────
+  # FRONTEND — React/Vite (Port 5173 dev / 80 prod)
+  # ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  # DATABASE — PostgreSQL + PostGIS (OPTIONAL)
+  # Enable with: docker compose --profile production up
+  # Required for large-scale deployments; not needed for local development
+  # ─────────────────────────────────────────────
+  db:
+    image: postgis/postgis:16-3.4
+    profiles:
+      - production
+    environment:
+      POSTGRES_DB: sih26162_thermal
+      POSTGRES_USER: "${DB_USER:-sih26162}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD must be set for production PostgreSQL}"
+    volumes:
+      - sih26162_pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-sih26162} -d sih26162_thermal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  sih26162_data:
+    driver: local
+  sih26162_pgdata:
+    driver: local

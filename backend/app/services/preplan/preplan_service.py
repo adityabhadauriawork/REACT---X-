@@ -58,7 +58,7 @@ class NumberedCanvas(canvas.Canvas):
         
         # Running Top Header (pages > 1)
         if self._pageNumber > 1:
-            self.drawString(36, 808, f"SIH 1505 • INDUSTRIAL EMERGENCY PRE-PLAN • {self.doc_version}")
+            self.drawString(36, 808, f"SIH26162 • INDUSTRIAL EMERGENCY PRE-PLAN • {self.doc_version}")
             self.drawRightString(559, 808, f"INCIDENT: {self.incident_id} [{self.doc_status}]")
             self.setStrokeColor(colors.HexColor("#cbd5e1"))
             self.setLineWidth(0.6)
@@ -201,7 +201,7 @@ class PrePlanService:
         evac_plan: EvacuationPlanResponse,
         resource_plan: ResourceOptimizationPlan,
         auth_record: Optional[AuthorizationRecordModel] = None,
-        author_name: str = "SIH-1505 Decision Support Engine",
+        author_name: str = "SIH26162 Decision Support Engine",
         facility_ref: str = "PCH-ALPHA-04 (Demo Facility — Non-Statutory Evaluation)"
     ) -> bytes:
         """
@@ -322,12 +322,12 @@ class PrePlanService:
         # 1. Header Banner
         header_data = [
             [
-                Paragraph("<b>SIH 1505 — INDUSTRIAL EMERGENCY PRE-PLAN</b>", title_style),
+                Paragraph("<b>SIH26162 — INDUSTRIAL EMERGENCY PRE-PLAN</b>", title_style),
                 Paragraph(f"<b>INCIDENT ID:</b> {resource_plan.incident_id}<br/><b>DOCUMENT VERSION:</b> {doc_version} [{doc_status}]", subtitle_style)
             ],
             [
                 Paragraph(f"<b>FACILITY:</b> {plant_info.get('name', 'PetroChem Complex Alpha')}<br/><b>PROTOTYPE FACILITY REF:</b> {facility_ref}", subtitle_style),
-                Paragraph(f"<b>GENERATED:</b> {now_str}<br/><b>PREPARED BY:</b> SIH-1505 Decision Support Engine", subtitle_style)
+                Paragraph(f"<b>GENERATED:</b> {now_str}<br/><b>PREPARED BY:</b> SIH26162 Decision Support Engine", subtitle_style)
             ]
         ]
         header_table = Table(header_data, colWidths=[330, 193])
@@ -771,7 +771,7 @@ class PrePlanService:
         story.append(Paragraph("9. REGULATORY DISCLAIMER & PROTOTYPE NOTICE", h1_style))
         disclaimer_text = (
             "<b>PROTOTYPE DECISION SUPPORT — NON-CERTIFIED COMPUTATIONAL WORKFLOW:</b><br/>"
-            "This emergency pre-plan document is prepared automatically by the SIH 1505 Decision Support Engine. "
+            "This emergency pre-plan document is prepared automatically by the SIH26162 Decision Support Engine. "
             "Dispersion envelopes, routing corridors, and tactical dispatches are computed for hackathon demonstration and decision-support prototyping only. "
             "This software does NOT claim certified ALOHA equivalence or statutory compliance. "
             "Operational tactical actions require validation against the facility's approved Emergency Response and Disaster Management Plan (ERDMP), applicable OISD/PESO standards, and competent statutory safety authorities."
@@ -797,7 +797,7 @@ class PrePlanService:
                     Paragraph(
                         f"<font color='#15803d'><b>DOCUMENT STATUS: AUTHORIZED (PROTOTYPE DEMO)</b></font><br/>"
                         f"<b>Document Version:</b> {doc_version}<br/>"
-                        f"<b>Prepared by:</b> SIH-1505 Decision Support Engine<br/>"
+                        f"<b>Prepared by:</b> SIH26162 Decision Support Engine<br/>"
                         f"<b>Demonstration Approver:</b> <b>{auth_record.approver_name}</b><br/>"
                         f"<b>Role / Designation:</b> {auth_record.approver_role}<br/>"
                         f"<b>Authorization Record ID:</b> {auth_record.id}<br/>"
@@ -829,7 +829,7 @@ class PrePlanService:
                 [
                     Paragraph(
                         f"<font color='#b45309'><b>DOCUMENT STATUS: PENDING HUMAN AUTHORIZATION (Version {doc_version})</b></font><br/>"
-                        f"<b>Prepared by:</b> SIH-1505 Decision Support Engine<br/>"
+                        f"<b>Prepared by:</b> SIH26162 Decision Support Engine<br/>"
                         f"<b>Approver:</b> Not provided (Pending Human Review)<br/>"
                         f"<b>Role / Designation:</b> Not provided<br/>"
                         f"<b>Authorization Record ID:</b> None (Draft State)<br/>"

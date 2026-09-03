@@ -18,7 +18,7 @@ export default function EmergencyCopilotDrawer({
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: '👋 **SIH-1505 AI Emergency Copilot Ready.**\nI can analyze active Gaussian dispersion physics, explain evacuation routing decisions, calculate hypothetical What-If outcomes, or draft HSE executive briefings.',
+      content: '👋 **REACT-X AI Operations Assistant Ready.**\nI can analyze satellite thermal hotspots, evaluate industrial facility baselines, explain dispersion physics, and assist with evacuation corridors.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);

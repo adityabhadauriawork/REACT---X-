@@ -1,7 +1,7 @@
-import requests
-import json
+from fastapi.testclient import TestClient
+from app.main import app
 
-base = "http://127.0.0.1:8000/api"
+client = TestClient(app)
 
 def test_ambient_temperature_data_flow():
     print("==================================================")
@@ -9,7 +9,7 @@ def test_ambient_temperature_data_flow():
     print("==================================================")
 
     # 1. Test LIVE Mode Temperature from Open-Meteo
-    weather_res = requests.get(f"{base}/weather/current?latitude=21.6850&longitude=72.5750")
+    weather_res = client.get("/api/weather/current?latitude=21.6850&longitude=72.5750")
     assert weather_res.status_code == 200
     live_w = weather_res.json()
     live_temp = live_w["temperature_c"]
@@ -30,7 +30,7 @@ def test_ambient_temperature_data_flow():
         "weather_source": "Open-Meteo"
     }
 
-    sim_res = requests.post(f"{base}/hazard/simulate", json=live_sim_payload)
+    sim_res = client.post("/api/hazard/simulate", json=live_sim_payload)
     assert sim_res.status_code == 200
     sim_data = sim_res.json()
 
@@ -40,20 +40,20 @@ def test_ambient_temperature_data_flow():
     print(f"[PASS] LIVE Mode HazardSimulationResult contains ambient_temp_c: {sim_data['ambient_temp_c']}°C")
 
     # Complete pipeline for LIVE mode
-    imp = requests.post(f"{base}/impact/analyze?time_step_sec=120", json=sim_data).json()
-    evac = requests.post(f"{base}/evacuation/route?origin_name=T-04%20Vicinity", json={
+    imp = client.post("/api/impact/analyze?time_step_sec=120", json=sim_data).json()
+    evac = client.post("/api/evacuation/route?origin_name=T-04%20Vicinity", json={
         "simulation_result": sim_data,
         "impact_result": imp,
         "origin_coords": sim_data["source_coordinates"]
     }).json()
-    res = requests.post(f"{base}/resources/optimize", json={
+    res = client.post("/api/resources/optimize", json={
         "simulation_result": sim_data,
         "impact_result": imp,
         "evacuation_plan": evac
     }).json()
 
     # Generate PDF and ensure it compiles cleanly with live temp
-    pdf_res = requests.post(f"{base}/preplan/generate-pdf", json={
+    pdf_res = client.post("/api/preplan/generate-pdf", json={
         "simulation_result": sim_data,
         "impact_result": imp,
         "evacuation_plan": evac,
@@ -79,14 +79,14 @@ def test_ambient_temperature_data_flow():
         "weather_source": "Scenario Override"
     }
 
-    demo_sim = requests.post(f"{base}/hazard/simulate", json=demo_sim_payload).json()
+    demo_sim = client.post("/api/hazard/simulate", json=demo_sim_payload).json()
     assert demo_sim["ambient_temp_c"] == demo_temp, f"Expected {demo_temp}, got {demo_sim['ambient_temp_c']}"
     print(f"[PASS] DEMO Mode HazardSimulationResult contains custom ambient_temp_c: {demo_sim['ambient_temp_c']}°C")
 
     # 3. Test Presets Temperature Mapping
-    presets = requests.get(f"{base}/scenarios/presets").json()
+    presets = client.get("/api/scenarios/presets").json()
     for p in presets:
-        p_sim = requests.post(f"{base}/hazard/simulate", json={
+        p_sim = client.post("/api/hazard/simulate", json={
             "title": p["title"],
             "asset_id": p["asset_id"],
             "chemical_id": p["chemical_id"],

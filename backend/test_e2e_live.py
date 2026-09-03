@@ -1,7 +1,16 @@
+import pytest
 import requests
 import json
 import sys
 
+def is_live_available():
+    try:
+        r = requests.get("http://localhost:5173/", timeout=1)
+        return r.status_code == 200
+    except Exception:
+        return False
+
+@pytest.mark.skipif(not is_live_available(), reason="Live frontend dev server not running at http://localhost:5173")
 def test_live_servers():
     print("==================================================")
     print("RUNNING LIVE END-TO-END & TACTICAL RESOURCE AUDIT TESTS")

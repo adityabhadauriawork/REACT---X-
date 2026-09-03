@@ -1,8 +1,9 @@
-import requests
 import json
 import sys
+from fastapi.testclient import TestClient
+from app.main import app
 
-BASE_URL = "http://127.0.0.1:8000/api"
+client = TestClient(app)
 
 def test_cross_role_data_consistency():
     print("=" * 80)
@@ -27,23 +28,23 @@ def test_cross_role_data_consistency():
     }
 
     # 1. Hazard Simulation
-    sim_res = requests.post(f"{BASE_URL}/hazard/simulate", json=scenario_params)
+    sim_res = client.post("/api/hazard/simulate", json=scenario_params)
     assert sim_res.status_code == 200, f"Simulation failed: {sim_res.text}"
     sim = sim_res.json()
     sim["id"] = "INC-T-04"
 
     # 2. Impact Assessment
-    imp_res = requests.post(f"{BASE_URL}/impact/analyze?time_step_sec=120", json=sim)
+    imp_res = client.post("/api/impact/analyze?time_step_sec=120", json=sim)
     assert imp_res.status_code == 200, f"Impact failed: {imp_res.text}"
     imp = imp_res.json()
 
     # 3. Evacuation Route
-    evac_res = requests.post(f"{BASE_URL}/evacuation/route?origin_name=T-04%20Vicinity", json={"simulation_result": sim, "impact_result": imp})
+    evac_res = client.post("/api/evacuation/route?origin_name=T-04%20Vicinity", json={"simulation_result": sim, "impact_result": imp})
     assert evac_res.status_code == 200, f"Evacuation failed: {evac_res.text}"
     evac = evac_res.json()
 
     # 4. Tactical Resource Optimization
-    res_res = requests.post(f"{BASE_URL}/resources/optimize", json={"simulation_result": sim, "impact_result": imp, "evacuation_plan": evac})
+    res_res = client.post("/api/resources/optimize", json={"simulation_result": sim, "impact_result": imp, "evacuation_plan": evac})
     assert res_res.status_code == 200, f"Resources failed: {res_res.text}"
     res = res_res.json()
 
@@ -82,7 +83,7 @@ def test_cross_role_data_consistency():
         "evacuation_plan": evac,
         "resource_plan": res
     }
-    brief_res = requests.post(f"{BASE_URL}/intelligence/executive-brief", json=brief_req)
+    brief_res = client.post("/api/intelligence/executive-brief", json=brief_req)
     assert brief_res.status_code == 200, f"Brief failed: {brief_res.text}"
     brief = brief_res.json()
 
@@ -107,7 +108,7 @@ def test_cross_role_data_consistency():
         "evacuation_plan": evac,
         "resource_plan": res
     }
-    t_res = requests.post(f"{BASE_URL}/intelligence/timeline", json=timeline_req)
+    t_res = client.post("/api/intelligence/timeline", json=timeline_req)
     assert t_res.status_code == 200, f"Timeline failed: {t_res.text}"
     timeline = t_res.json()
 
@@ -135,7 +136,7 @@ def test_cross_role_data_consistency():
         "simulation_result": sim,
         "impact_result": imp
     }
-    d_res = requests.post(f"{BASE_URL}/intelligence/domino-risk", json=domino_req)
+    d_res = client.post("/api/intelligence/domino-risk", json=domino_req)
     assert d_res.status_code == 200, f"Domino failed: {d_res.text}"
     domino = d_res.json()
 
@@ -157,7 +158,7 @@ def test_cross_role_data_consistency():
         "actor_role": "HSE_COMMANDER",
         "actor_name": "Demo HSE Controller"
     }
-    rec_res = requests.post(f"{BASE_URL}/intelligence/audit-trail/record", json=audit_rec)
+    rec_res = client.post("/api/intelligence/audit-trail/record", json=audit_rec)
     assert rec_res.status_code == 200, f"Audit record failed: {rec_res.text}"
     recorded = rec_res.json()
     assert recorded["incident_id"] == canonical_id
@@ -172,11 +173,11 @@ def test_cross_role_data_consistency():
     altered_params["release_rate_kg_s"] = 30.0  # Doubled release rate
 
     # Re-run pipeline with altered parameter
-    sim2 = requests.post(f"{BASE_URL}/hazard/simulate", json=altered_params).json()
+    sim2 = client.post("/api/hazard/simulate", json=altered_params).json()
     sim2["id"] = "INC-T-04"
-    imp2 = requests.post(f"{BASE_URL}/impact/analyze?time_step_sec=120", json=sim2).json()
-    evac2 = requests.post(f"{BASE_URL}/evacuation/route?origin_name=T-04%20Vicinity", json={"simulation_result": sim2, "impact_result": imp2}).json()
-    res2 = requests.post(f"{BASE_URL}/resources/optimize", json={"simulation_result": sim2, "impact_result": imp2, "evacuation_plan": evac2}).json()
+    imp2 = client.post("/api/impact/analyze?time_step_sec=120", json=sim2).json()
+    evac2 = client.post("/api/evacuation/route?origin_name=T-04%20Vicinity", json={"simulation_result": sim2, "impact_result": imp2}).json()
+    res2 = client.post("/api/resources/optimize", json={"simulation_result": sim2, "impact_result": imp2, "evacuation_plan": evac2}).json()
 
     new_canonical_score = imp2["risk_assessment"]["overall_score"]
     new_canonical_category = imp2["risk_assessment"]["risk_category"]
@@ -185,7 +186,7 @@ def test_cross_role_data_consistency():
     print(f"New Canonical Risk Score: {new_canonical_score}/100 ({new_canonical_category}), Red Reach: {new_canonical_reach:.1f}m")
 
     # Generate Executive Brief for altered state
-    brief2 = requests.post(f"{BASE_URL}/intelligence/executive-brief", json={
+    brief2 = client.post("/api/intelligence/executive-brief", json={
         "simulation_result": sim2, "impact_result": imp2, "evacuation_plan": evac2, "resource_plan": res2
     }).json()
 

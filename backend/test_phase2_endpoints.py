@@ -1,7 +1,8 @@
-import requests
 import json
+from fastapi.testclient import TestClient
+from app.main import app
 
-BASE_URL = "http://127.0.0.1:8000/api"
+client = TestClient(app)
 
 def test_phase2_backend_intelligence():
     print("================================================================================")
@@ -30,7 +31,7 @@ def test_phase2_backend_intelligence():
             "wind_direction_deg": 45.0
         }
     }
-    w_res = requests.post(f"{BASE_URL}/intelligence/whatif/compare", json=whatif_payload)
+    w_res = client.post("/api/intelligence/whatif/compare", json=whatif_payload)
     assert w_res.status_code == 200, f"What-If failed: {w_res.text}"
     w_data = w_res.json()
     assert w_data["scenario_b"]["red_reach_m"] > w_data["scenario_a"]["red_reach_m"]
@@ -40,7 +41,7 @@ def test_phase2_backend_intelligence():
 
     # 2. HISTORICAL INCIDENT ANALYTICS
     print("\n--- 2. TESTING HISTORICAL ANALYTICS ENDPOINT ---")
-    a_res = requests.get(f"{BASE_URL}/intelligence/analytics/summary")
+    a_res = client.get("/api/intelligence/analytics/summary")
     assert a_res.status_code == 200, f"Analytics failed: {a_res.text}"
     a_data = a_res.json()
     assert a_data["total_historical_incidents"] >= 20
@@ -51,7 +52,7 @@ def test_phase2_backend_intelligence():
 
     # 3. PREDICTIVE MAINTENANCE / ASSET EARLY WARNING
     print("\n--- 3. TESTING PREDICTIVE ASSET HEALTH ENDPOINT ---")
-    p_res = requests.get(f"{BASE_URL}/intelligence/predictive/assets")
+    p_res = client.get("/api/intelligence/predictive/assets")
     assert p_res.status_code == 200, f"Predictive failed: {p_res.text}"
     p_data = p_res.json()
     assert p_data["total_monitored_assets"] >= 8
@@ -63,9 +64,9 @@ def test_phase2_backend_intelligence():
 
     # 4. COMPUTER VISION DETECTION
     print("\n--- 4. TESTING COMPUTER VISION DETECTION ENDPOINT ---")
-    v_presets = requests.get(f"{BASE_URL}/intelligence/vision/presets").json()
+    v_presets = client.get("/api/intelligence/vision/presets").json()
     assert len(v_presets) >= 4
-    v_res = requests.post(f"{BASE_URL}/intelligence/vision/detect", data={"camera_id": "CAM-01", "simulate_hazard_type": "SMOKE"})
+    v_res = client.post("/api/intelligence/vision/detect", data={"camera_id": "CAM-01", "simulate_hazard_type": "SMOKE"})
     assert v_res.status_code == 200, f"Vision failed: {v_res.text}"
     v_data = v_res.json()
     assert len(v_data["detections"]) > 0
@@ -78,7 +79,7 @@ def test_phase2_backend_intelligence():
     print("\n--- 5. TESTING AI EMERGENCY COPILOT ENDPOINT ---")
     
     # Query 1: Evacuation reasoning
-    c1 = requests.post(f"{BASE_URL}/intelligence/copilot/chat", json={
+    c1 = client.post("/api/intelligence/copilot/chat", json={
         "query": "Why is AP-1 unsafe?",
         "simulation_result": w_data["scenario_a_simulation"],
         "impact_result": {"total_workers_at_site": 28, "affected_workers_count": 0},
@@ -91,7 +92,7 @@ def test_phase2_backend_intelligence():
     print(f"       Reply Preview: {safe_preview}...")
 
     # Query 2: What-if hypothetical reasoning
-    c2 = requests.post(f"{BASE_URL}/intelligence/copilot/chat", json={
+    c2 = client.post("/api/intelligence/copilot/chat", json={
         "query": "What if the release rate doubles?",
         "simulation_result": w_data["scenario_a_simulation"],
         "impact_result": {"total_workers_at_site": 28, "affected_workers_count": 0},
@@ -103,7 +104,7 @@ def test_phase2_backend_intelligence():
     print(f"[PASS] Copilot (Hypothetical Query): Intent='{c2['intent_detected']}', Red Reach Delta: +{c2['grounded_metrics']['red_reach_delta_m']}m")
 
     # Query 3: HSE Briefing
-    c3 = requests.post(f"{BASE_URL}/intelligence/copilot/chat", json={
+    c3 = client.post("/api/intelligence/copilot/chat", json={
         "query": "Generate an executive briefing for HSE controller",
         "simulation_result": w_data["scenario_a_simulation"],
         "impact_result": {"total_workers_at_site": 28, "affected_workers_count": 0, "risk_assessment": {"overall_score": 75, "risk_category": "HIGH"}},

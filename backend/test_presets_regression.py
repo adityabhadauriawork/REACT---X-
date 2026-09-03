@@ -1,7 +1,8 @@
-import requests
 import json
+from fastapi.testclient import TestClient
+from app.main import app
 
-base = "http://127.0.0.1:8000/api"
+client = TestClient(app)
 
 def run_preset_pipeline(preset_id, expected_asset, expected_chem_id, expected_chem_name):
     print(f"\n=======================================================")
@@ -10,7 +11,7 @@ def run_preset_pipeline(preset_id, expected_asset, expected_chem_id, expected_ch
     print(f"=======================================================")
 
     # 1. Fetch presets catalog
-    presets_res = requests.get(f"{base}/scenarios/presets")
+    presets_res = client.get("/api/scenarios/presets")
     assert presets_res.status_code == 200
     presets = presets_res.json()
     preset = next((p for p in presets if p["id"] == preset_id or p["asset_id"] == expected_asset), None)
@@ -38,7 +39,7 @@ def run_preset_pipeline(preset_id, expected_asset, expected_chem_id, expected_ch
         "weather_mode": "DEMO",
         "weather_source": "Scenario Preset"
     }
-    sim_res = requests.post(f"{base}/hazard/simulate", json=sim_payload)
+    sim_res = client.post("/api/hazard/simulate", json=sim_payload)
     assert sim_res.status_code == 200, f"Simulate failed for {preset_id}: {sim_res.text}"
     sim_data = sim_res.json()
     assert sim_data["chemical_id"] == expected_chem_id
@@ -46,13 +47,13 @@ def run_preset_pipeline(preset_id, expected_asset, expected_chem_id, expected_ch
     print(f"[OK] Step 1 Simulation: Chemical='{sim_data['chemical_name']}', Zones={len(sim_data['summary_zones'])}, RedReach={sim_data['summary_zones'][0]['max_downwind_distance_m']}m")
 
     # 3. Step 2: Spatial Impact
-    imp_res = requests.post(f"{base}/impact/analyze?time_step_sec=120", json=sim_data)
+    imp_res = client.post("/api/impact/analyze?time_step_sec=120", json=sim_data)
     assert imp_res.status_code == 200, f"Impact failed for {preset_id}: {imp_res.text}"
     imp_data = imp_res.json()
     print(f"[OK] Step 2 Impact: AffectedWorkers={imp_data['affected_workers_count']}, BlockedRoads={imp_data['blocked_roads_count']}, RiskScore={imp_data['risk_assessment']['overall_score']}")
 
     # 4. Step 3: Evacuation Routing
-    evac_res = requests.post(f"{base}/evacuation/route?origin_name={expected_asset}%20Vicinity", json={
+    evac_res = client.post(f"/api/evacuation/route?origin_name={expected_asset}%20Vicinity", json={
         "simulation_result": sim_data,
         "impact_result": imp_data,
         "origin_coords": sim_data["source_coordinates"]
@@ -63,7 +64,7 @@ def run_preset_pipeline(preset_id, expected_asset, expected_chem_id, expected_ch
     print(f"[OK] Step 3 Evacuation: Target='{route['recommended_assembly_point_name']}' via '{route['recommended_gate_name']}', Distance={route['total_distance_m']}m")
 
     # 5. Step 4: Tactical Resources
-    res_res = requests.post(f"{base}/resources/optimize", json={
+    res_res = client.post("/api/resources/optimize", json={
         "simulation_result": sim_data,
         "impact_result": imp_data,
         "evacuation_plan": evac_data

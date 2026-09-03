@@ -363,7 +363,7 @@ export default function PrePlanViewer({
           </div>
           <div className="text-right text-[11px]">
             <div className="font-bold text-cyan-400">INCIDENT ID: {resourcePlan.incident_id}</div>
-            <div className="text-slate-400">Prepared by: SIH-1505 Decision Support Engine</div>
+            <div className="text-slate-400">Prepared by: REACT-X Autonomous Response Engine</div>
             <div className={`font-bold ${isAuthorized ? 'text-emerald-400' : 'text-amber-400'}`}>
               Status: {authRecord?.status || 'PENDING_HUMAN_AUTHORIZATION'} ({authRecord?.document_version || 'v0.1'})
             </div>
@@ -500,7 +500,7 @@ export default function PrePlanViewer({
         {/* Section 6: Authorization Governance Footer */}
         <div className="border-t border-slate-800 pt-4 flex flex-wrap justify-between items-end gap-3 text-[10px] text-slate-500">
           <div>
-            Prepared autonomously by SIH-1505 Decision Support Engine.<br/>
+            Prepared autonomously by REACT-X Autonomous Response Engine.<br/>
             Human Authorization: <b className={isAuthorized ? 'text-emerald-400' : 'text-amber-400'}>{isAuthorized ? `GRANTED by ${authRecord.approver_name}` : 'REQUIRED (Status: PENDING)'}</b>
           </div>
           <div className="text-right border-t border-slate-600 pt-1 w-64">

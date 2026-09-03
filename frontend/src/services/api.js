@@ -1,4 +1,6 @@
-const API_BASE = 'http://127.0.0.1:8000/api';
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL)
+  ? import.meta.env.VITE_API_BASE_URL
+  : 'http://127.0.0.1:8000/api';
 
 export const api = {
   // 1. Plant Site
@@ -305,5 +307,897 @@ export const api = {
       throw new Error(err.detail || 'Executive situation brief generation failed');
     }
     return res.json();
+  },
+
+  // 15. Industrial Streaming, Pre-Incident Safety & Telemetry
+  async getStreamingMetrics() {
+    const res = await fetch(`${API_BASE}/streaming/metrics`);
+    if (!res.ok) throw new Error(`Failed to fetch streaming metrics: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getSystemHealth() {
+    const res = await fetch(`${API_BASE}/streaming/health-overview`);
+    if (!res.ok) throw new Error(`Failed to fetch system health: ${res.statusText}`);
+    return res.json();
+  },
+
+  async setStreamConfig(streamCount) {
+    const res = await fetch(`${API_BASE}/streaming/config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stream_count: streamCount })
+    });
+    if (!res.ok) throw new Error('Failed to update stream configuration');
+    return res.json();
+  },
+
+  async injectStreamAnomaly(assetId = 'T-04', signalSuffix = 'PRESS_01', targetValue = 6.8, severity = 'CRITICAL') {
+    const res = await fetch(`${API_BASE}/streaming/inject-anomaly`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        asset_id: assetId,
+        signal_suffix: signalSuffix,
+        target_value: targetValue,
+        severity
+      })
+    });
+    if (!res.ok) throw new Error('Failed to inject stream anomaly');
+    return res.json();
+  },
+
+  async clearStreamAnomalies() {
+    const res = await fetch(`${API_BASE}/streaming/clear-anomalies`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to clear stream anomalies');
+    return res.json();
+  },
+
+  async getStreamTick(count = 50) {
+    const res = await fetch(`${API_BASE}/streaming/tick?count=${count}`);
+    if (!res.ok) throw new Error(`Failed to fetch telemetry tick: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getAllAssetsEarlyWarning() {
+    const res = await fetch(`${API_BASE}/streaming/pre-incident/assets`);
+    if (!res.ok) throw new Error(`Failed to fetch asset early warnings: ${res.statusText}`);
+    return res.json();
+  },
+
+  async evaluateAssetState(payload) {
+    const res = await fetch(`${API_BASE}/streaming/pre-incident/evaluate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Failed to evaluate asset state');
+    return res.json();
+  },
+
+  async getPreventiveInterventions(assetId, chemicalId = 'CHEM-NH3', riskScore = 75.0) {
+    const res = await fetch(`${API_BASE}/streaming/preventive/interventions/${assetId}?chemical_id=${encodeURIComponent(chemicalId)}&current_risk_score=${riskScore}`);
+    if (!res.ok) throw new Error(`Failed to load preventive interventions: ${res.statusText}`);
+    return res.json();
+  },
+
+  async simulatePreventiveWhatIf(payload) {
+    const res = await fetch(`${API_BASE}/streaming/preventive/whatif`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Preventive What-If simulation failed');
+    }
+    return res.json();
+  },
+
+  async authorizeControlAction(payload) {
+    const res = await fetch(`${API_BASE}/streaming/preventive/authorize-control`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Failed to authorize control action');
+    return res.json();
+  },
+
+  async getCascadePathways(assetId) {
+    const res = await fetch(`${API_BASE}/streaming/risk-graph/cascade/${assetId}`);
+    if (!res.ok) throw new Error(`Failed to fetch cascade pathways: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getEnvironmentalReceptors(assetId, windDirectionDeg = 195.0) {
+    const res = await fetch(`${API_BASE}/streaming/risk-graph/environmental/${assetId}?wind_direction_deg=${windDirectionDeg}`);
+    if (!res.ok) throw new Error(`Failed to fetch environmental receptors: ${res.statusText}`);
+    return res.json();
+  },
+
+  async get19StageRoster() {
+    const res = await fetch(`${API_BASE}/streaming/scenarios/19-stage/roster`);
+    if (!res.ok) throw new Error(`Failed to fetch 19-stage roster: ${res.statusText}`);
+    return res.json();
+  },
+
+  async execute19Stage(stageNum) {
+    const res = await fetch(`${API_BASE}/streaming/scenarios/19-stage/${stageNum}`);
+    if (!res.ok) throw new Error(`Failed to execute stage ${stageNum}: ${res.statusText}`);
+    return res.json();
+  },
+
+  // 16. REACT-X SATELLITE THERMAL INTELLIGENCE SUITE
+  async getThermalEvents(minConfidence = null, classification = null, facilityId = null, onlyAbnormal = false) {
+    const params = [];
+    if (minConfidence) params.push(`min_confidence=${encodeURIComponent(minConfidence)}`);
+    if (classification && classification !== 'ALL') params.push(`classification=${encodeURIComponent(classification)}`);
+    if (facilityId) params.push(`facility_id=${encodeURIComponent(facilityId)}`);
+    if (onlyAbnormal) params.push(`only_abnormal=true`);
+    const queryStr = params.length ? `?${params.join('&')}` : '';
+
+    const res = await fetch(`${API_BASE}/thermal/events${queryStr}`);
+    if (!res.ok) throw new Error(`Failed to load thermal events: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalEventDetail(eventId) {
+    const res = await fetch(`${API_BASE}/thermal/events/${encodeURIComponent(eventId)}`);
+    if (!res.ok) throw new Error(`Failed to load thermal event detail: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getIndustrialFacilities() {
+    const res = await fetch(`${API_BASE}/thermal/facilities`);
+    if (!res.ok) throw new Error(`Failed to load industrial facilities: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityProfile(facilityId) {
+    const res = await fetch(`${API_BASE}/thermal/facilities/${encodeURIComponent(facilityId)}`);
+    if (!res.ok) throw new Error(`Failed to load facility profile: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getPersistentThermalSources(onlyAbnormal = false) {
+    const queryStr = onlyAbnormal ? '?only_abnormal=true' : '';
+    const res = await fetch(`${API_BASE}/thermal/persistent-sources${queryStr}`);
+    if (!res.ok) throw new Error(`Failed to load persistent thermal sources: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalAbnormalityWatchlist() {
+    const res = await fetch(`${API_BASE}/thermal/abnormality-watchlist`);
+    if (!res.ok) throw new Error(`Failed to load thermal abnormality watchlist: ${res.statusText}`);
+    return res.json();
+  },
+
+  async classifyThermalEvent(eventId) {
+    const res = await fetch(`${API_BASE}/thermal/classify/${encodeURIComponent(eventId)}`, {
+      method: 'POST'
+    });
+    if (!res.ok) throw new Error(`Failed to classify thermal event: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getNightfireCharacterization(eventId) {
+    const res = await fetch(`${API_BASE}/thermal/nightfire/${encodeURIComponent(eventId)}`);
+    if (!res.ok) throw new Error(`Failed to load VIIRS Nightfire data: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getMultiSatelliteCorroboration(eventId) {
+    const res = await fetch(`${API_BASE}/thermal/multi-satellite/${encodeURIComponent(eventId)}`);
+    if (!res.ok) throw new Error(`Failed to load multi-satellite corroboration: ${res.statusText}`);
+    return res.json();
+  },
+
+  async executeThermalHandoff(payload) {
+    const res = await fetch(`${API_BASE}/thermal/handoff`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Emergency handoff failed');
+    }
+    return res.json();
+  },
+
+  async getThermalGeoJSON(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.satellite) params.append('satellite', filters.satellite);
+    if (filters.minConfidence) params.append('min_confidence', filters.minConfidence);
+    if (filters.classification && filters.classification !== 'ALL') params.append('classification', filters.classification);
+    if (filters.onlyAbnormal) params.append('only_abnormal', 'true');
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await fetch(`${API_BASE}/thermal/events/geojson${queryStr}`);
+    if (!res.ok) throw new Error(`Failed to load thermal GeoJSON: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalStats() {
+    const res = await fetch(`${API_BASE}/thermal/stats`);
+    if (!res.ok) throw new Error(`Failed to load thermal stats: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFIRMSFeedStatus() {
+    const res = await fetch(`${API_BASE}/thermal/feed/status`);
+    if (!res.ok) throw new Error(`Failed to load FIRMS feed status: ${res.statusText}`);
+    return res.json();
+  },
+
+  async triggerFIRMSPoll(bbox = null, days = 1) {
+    const params = new URLSearchParams();
+    if (bbox) params.append('bbox', bbox);
+    params.append('days', days.toString());
+
+    const res = await fetch(`${API_BASE}/thermal/feed/poll?${params.toString()}`, {
+      method: 'POST'
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'FIRMS manual poll failed');
+    }
+    return res.json();
+  },
+
+  async getSatelliteFeedHealth() {
+    const res = await fetch(`${API_BASE}/thermal/health`);
+    if (!res.ok) throw new Error(`Failed to load satellite feed health: ${res.statusText}`);
+    return res.json();
+  },
+
+  // 17. Phase 5 Spatiotemporal Thermal Source Objects
+  async getThermalSources(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.status) params.append('source_status', filters.status);
+    if (filters.facility_id) params.append('facility_id', filters.facility_id);
+    if (filters.min_frp) params.append('min_frp', filters.min_frp.toString());
+    if (filters.bbox) params.append('bbox', filters.bbox);
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await fetch(`${API_BASE}/thermal/sources${queryStr}`);
+    if (!res.ok) throw new Error(`Failed to load thermal sources: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalSourceDetail(sourceId) {
+    const res = await fetch(`${API_BASE}/thermal/sources/${encodeURIComponent(sourceId)}`);
+    if (!res.ok) throw new Error(`Failed to load thermal source detail: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalSourceEvents(sourceId) {
+    const res = await fetch(`${API_BASE}/thermal/sources/${encodeURIComponent(sourceId)}/events`);
+    if (!res.ok) throw new Error(`Failed to load source observations: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalSourceFacilities(sourceId) {
+    const res = await fetch(`${API_BASE}/thermal/sources/${encodeURIComponent(sourceId)}/facilities`);
+    if (!res.ok) throw new Error(`Failed to load source candidate facilities: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalSourcesGeoJSON(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.status) params.append('source_status', filters.status);
+    if (filters.bbox) params.append('bbox', filters.bbox);
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await fetch(`${API_BASE}/thermal/sources/geojson${queryStr}`);
+    if (!res.ok) throw new Error(`Failed to load thermal sources GeoJSON: ${res.statusText}`);
+    return res.json();
+  },
+
+  async triggerThermalClustering() {
+    const res = await fetch(`${API_BASE}/thermal/sources/cluster`, {
+      method: 'POST'
+    });
+    if (!res.ok) throw new Error(`Failed to trigger thermal clustering: ${res.statusText}`);
+    return res.json();
+  },
+
+  // 18. Phase 5 Industrial Facilities Registry
+  async getFacilities(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.state) params.append('state', filters.state);
+    if (filters.district) params.append('district', filters.district);
+    if (filters.sector) params.append('sector', filters.sector);
+    if (filters.source) params.append('source', filters.source);
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await fetch(`${API_BASE}/facilities${queryStr}`);
+    if (!res.ok) throw new Error(`Failed to load industrial facilities: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityDetail(facilityId) {
+    const res = await fetch(`${API_BASE}/facilities/${encodeURIComponent(facilityId)}`);
+    if (!res.ok) throw new Error(`Failed to load facility profile: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityThermalSources(facilityId) {
+    const res = await fetch(`${API_BASE}/facilities/${encodeURIComponent(facilityId)}/thermal-sources`);
+    if (!res.ok) throw new Error(`Failed to load facility thermal sources: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilitiesGeoJSON() {
+    const res = await fetch(`${API_BASE}/facilities/geojson`);
+    if (!res.ok) throw new Error(`Failed to load facilities GeoJSON: ${res.statusText}`);
+    return res.json();
+  },
+
+  // 19. Phase 6 Thermal Fingerprints & Abnormality Detection Engine
+  async getThermalFingerprints(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.facility_id) params.append('facility_id', filters.facility_id);
+    if (filters.source_id) params.append('source_id', filters.source_id);
+    if (filters.data_sufficiency) params.append('data_sufficiency', filters.data_sufficiency);
+    if (filters.limit) params.append('limit', filters.limit);
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await fetch(`${API_BASE}/thermal/fingerprints${queryStr}`);
+    if (!res.ok) throw new Error(`Failed to load thermal fingerprints: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFingerprintDetail(fingerprintId) {
+    const res = await fetch(`${API_BASE}/thermal/fingerprints/${encodeURIComponent(fingerprintId)}`);
+    if (!res.ok) throw new Error(`Failed to load fingerprint detail: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityThermalHealth(facilityId) {
+    const res = await fetch(`${API_BASE}/thermal/facilities/${encodeURIComponent(facilityId)}/thermal-health`);
+    if (!res.ok) throw new Error(`Failed to load facility thermal health: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalAbnormalities(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.status) params.append('status', filters.status);
+    if (filters.min_score) params.append('min_score', filters.min_score);
+    if (filters.facility_id) params.append('facility_id', filters.facility_id);
+    if (filters.limit) params.append('limit', filters.limit);
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await fetch(`${API_BASE}/thermal/abnormalities${queryStr}`);
+    if (!res.ok) throw new Error(`Failed to load thermal abnormalities: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getAbnormalitiesGeoJSON(minScore = 0.0) {
+    const res = await fetch(`${API_BASE}/thermal/abnormalities/geojson?min_score=${minScore}`);
+    if (!res.ok) throw new Error(`Failed to load abnormalities GeoJSON: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getAbnormalityDetail(assessmentId) {
+    const res = await fetch(`${API_BASE}/thermal/abnormalities/${encodeURIComponent(assessmentId)}`);
+    if (!res.ok) throw new Error(`Failed to load abnormality detail: ${res.statusText}`);
+    return res.json();
+  },
+
+  async recalculateThermalFingerprints() {
+    const res = await fetch(`${API_BASE}/thermal/fingerprints/recalculate`, {
+      method: 'POST'
+    });
+    if (!res.ok) throw new Error(`Failed to recalculate fingerprints: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getMLFeatures(limit = 100) {
+    const res = await fetch(`${API_BASE}/thermal/ml-features?limit=${limit}`);
+    if (!res.ok) throw new Error(`Failed to load ML feature vectors: ${res.statusText}`);
+    return res.json();
+  },
+
+  // 20. Phase 7 Real AI/ML 7-Class Thermal Classifier & Explainability Engine
+  async getThermalModelStatus() {
+    const res = await fetch(`${API_BASE}/thermal/model/status`);
+    if (!res.ok) throw new Error(`Failed to fetch ML model status: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalClassification(sourceId) {
+    const res = await fetch(`${API_BASE}/thermal/classification/${encodeURIComponent(sourceId)}`);
+    if (!res.ok) throw new Error(`Failed to classify thermal source ${sourceId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalClassificationExplanation(sourceId) {
+    const res = await fetch(`${API_BASE}/thermal/classification/${encodeURIComponent(sourceId)}/explanation`);
+    if (!res.ok) throw new Error(`Failed to fetch classification explanation: ${res.statusText}`);
+    return res.json();
+  },
+
+  async classifyThermalFeatures(payload) {
+    const res = await fetch(`${API_BASE}/thermal/classify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`Failed to perform controlled feature classification: ${res.statusText}`);
+    return res.json();
+  },
+
+  async listThermalClassificationResults(limit = 50, predictedClass = null) {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit);
+    if (predictedClass) params.append('predicted_class', predictedClass);
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await fetch(`${API_BASE}/thermal/classification/results${queryStr}`);
+    if (!res.ok) throw new Error(`Failed to load classification results: ${res.statusText}`);
+    return res.json();
+  },
+
+  // 21. Phase 8 Multi-Satellite Corroboration & Thermal Evidence Fusion
+  async getSatelliteHealth() {
+    const res = await fetch(`${API_BASE}/satellite/health`);
+    if (!res.ok) throw new Error(`Failed to fetch satellite health: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getSatelliteAvailability() {
+    const res = await fetch(`${API_BASE}/satellite/availability`);
+    if (!res.ok) throw new Error(`Failed to fetch satellite availability matrix: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalSourceEvidence(sourceId, includeOptical = true) {
+    const res = await fetch(`${API_BASE}/thermal/sources/${encodeURIComponent(sourceId)}/evidence?include_optical=${includeOptical}`);
+    if (!res.ok) throw new Error(`Failed to fetch thermal evidence bundle for source ${sourceId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalSourceCorroboration(sourceId) {
+    const res = await fetch(`${API_BASE}/thermal/sources/${encodeURIComponent(sourceId)}/corroboration`);
+    if (!res.ok) throw new Error(`Failed to fetch source corroboration summary: ${res.statusText}`);
+    return res.json();
+  },
+
+  async corroborateThermalSource(sourceId, payload = {}) {
+    const res = await fetch(`${API_BASE}/thermal/sources/${encodeURIComponent(sourceId)}/corroborate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source_id: sourceId, ...payload })
+    });
+    if (!res.ok) throw new Error(`Failed to trigger source corroboration: ${res.statusText}`);
+    return res.json();
+  },
+
+  async requestImageConfirmation(sourceId) {
+    const res = await fetch(`${API_BASE}/thermal/sources/${encodeURIComponent(sourceId)}/request-image-confirmation`, {
+      method: 'POST'
+    });
+    if (!res.ok) throw new Error(`Failed to request on-demand image confirmation: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalEventEvidence(eventId) {
+    const res = await fetch(`${API_BASE}/thermal/events/${encodeURIComponent(eventId)}/evidence`);
+    if (!res.ok) throw new Error(`Failed to fetch event evidence: ${res.statusText}`);
+    return res.json();
+  },
+
+  async listEvidenceBundles(limit = 25, status = null) {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit);
+    if (status) params.append('status', status);
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await fetch(`${API_BASE}/thermal/evidence/bundles${queryStr}`);
+    if (!res.ok) throw new Error(`Failed to load evidence bundles: ${res.statusText}`);
+    return res.json();
+  },
+
+  // ==========================================
+  // PHASE 9: INDUSTRIAL THERMAL ASSESSMENT & REACT-X INTEGRATION
+  // ==========================================
+  async getThermalSourceAssessment(sourceId) {
+    const res = await fetch(`${API_BASE}/thermal/sources/${encodeURIComponent(sourceId)}/assessment`);
+    if (!res.ok) throw new Error(`Failed to fetch assessment for source ${sourceId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async assessThermalSource(sourceId, payload = {}) {
+    const res = await fetch(`${API_BASE}/thermal/sources/${encodeURIComponent(sourceId)}/assess`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source_id: sourceId, ...payload })
+    });
+    if (!res.ok) throw new Error(`Failed to run assessment for source ${sourceId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async listThermalAssessments(riskLevel = null, handoffEligibility = null, status = null, limit = 50) {
+    const params = new URLSearchParams();
+    if (riskLevel) params.append('risk_level', riskLevel);
+    if (handoffEligibility) params.append('handoff_eligibility', handoffEligibility);
+    if (status) params.append('status', status);
+    if (limit) params.append('limit', limit);
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await fetch(`${API_BASE}/thermal/assessments${queryStr}`);
+    if (!res.ok) throw new Error(`Failed to list thermal assessments: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getAssessmentById(assessmentId) {
+    const res = await fetch(`${API_BASE}/thermal/assessments/${encodeURIComponent(assessmentId)}`);
+    if (!res.ok) throw new Error(`Failed to fetch assessment ${assessmentId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getAssessmentHistory(assessmentId) {
+    const res = await fetch(`${API_BASE}/thermal/assessments/${encodeURIComponent(assessmentId)}/history`);
+    if (!res.ok) throw new Error(`Failed to fetch history for assessment ${assessmentId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async promoteAssessmentToIncident(assessmentId, payload) {
+    const res = await fetch(`${API_BASE}/thermal/assessments/${encodeURIComponent(assessmentId)}/promote-incident`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || `Failed to promote assessment ${assessmentId} to incident`);
+    }
+    return res.json();
+  },
+
+  async rejectAssessmentDraft(assessmentId, payload) {
+    const res = await fetch(`${API_BASE}/thermal/assessments/${encodeURIComponent(assessmentId)}/reject-draft`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || `Failed to reject assessment draft ${assessmentId}`);
+    }
+    return res.json();
+  },
+
+  async getAssessmentExecutiveBrief(assessmentId) {
+    const res = await fetch(`${API_BASE}/thermal/assessments/${encodeURIComponent(assessmentId)}/executive-brief`);
+    if (!res.ok) throw new Error(`Failed to fetch executive brief for assessment ${assessmentId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  // Phase 12: Real-Time Facility Telemetry
+  async getTelemetryHealth() {
+    const res = await fetch(`${API_BASE}/telemetry/health`);
+    if (!res.ok) throw new Error(`Failed to fetch telemetry health: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityLatestTelemetry(facilityId) {
+    const res = await fetch(`${API_BASE}/telemetry/facilities/${encodeURIComponent(facilityId)}/latest`);
+    if (!res.ok) throw new Error(`Failed to fetch telemetry for facility ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityTelemetryHistory(facilityId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/telemetry/facilities/${encodeURIComponent(facilityId)}/history?${query}`);
+    if (!res.ok) throw new Error(`Failed to fetch history for facility ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getSensorLatestTelemetry(sensorId) {
+    const res = await fetch(`${API_BASE}/telemetry/sensors/${encodeURIComponent(sensorId)}/latest`);
+    if (!res.ok) throw new Error(`Failed to fetch sensor telemetry ${sensorId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async setSimulatorScenario(scenarioName) {
+    const res = await fetch(`${API_BASE}/telemetry/simulator/scenario`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario_name: scenarioName })
+    });
+    if (!res.ok) throw new Error(`Failed to set simulation scenario: ${res.statusText}`);
+    return res.json();
+  },
+
+  async triggerSimulatorTick() {
+    const res = await fetch(`${API_BASE}/telemetry/simulator/tick`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) throw new Error(`Failed to trigger simulator tick: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getRegisteredGateways() {
+    const res = await fetch(`${API_BASE}/telemetry/gateways`);
+    if (!res.ok) throw new Error(`Failed to fetch edge gateways: ${res.statusText}`);
+    return res.json();
+  },
+
+  // Phase 13: Facility Thermal Vision & CCTV Intelligence
+  async getVisionHealth() {
+    const res = await fetch(`${API_BASE}/vision/health`);
+    if (!res.ok) throw new Error(`Failed to fetch vision health: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityLatestVision(facilityId) {
+    const res = await fetch(`${API_BASE}/vision/facilities/${encodeURIComponent(facilityId)}/latest`);
+    if (!res.ok) throw new Error(`Failed to fetch vision state for facility ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityVisionEvents(facilityId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/vision/facilities/${encodeURIComponent(facilityId)}/events?${query}`);
+    if (!res.ok) throw new Error(`Failed to fetch vision events for facility ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getCameraLatestVision(cameraId) {
+    const res = await fetch(`${API_BASE}/vision/cameras/${encodeURIComponent(cameraId)}/latest`);
+    if (!res.ok) throw new Error(`Failed to fetch vision state for camera ${cameraId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getRegisteredCameras() {
+    const res = await fetch(`${API_BASE}/vision/cameras`);
+    if (!res.ok) throw new Error(`Failed to fetch registered cameras: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getCorrelatedVisualAndTelemetry(assetId) {
+    const res = await fetch(`${API_BASE}/vision/correlated/${encodeURIComponent(assetId)}`);
+    if (!res.ok) throw new Error(`Failed to fetch correlated visual and telemetry for ${assetId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async setVisionSimulatorScenario(scenarioName) {
+    const res = await fetch(`${API_BASE}/vision/simulator/scenario`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario_name: scenarioName })
+    });
+    if (!res.ok) throw new Error(`Failed to set vision simulation scenario: ${res.statusText}`);
+    return res.json();
+  },
+
+  async triggerVisionSimulatorTick() {
+    const res = await fetch(`${API_BASE}/vision/simulator/tick`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) throw new Error(`Failed to trigger vision simulator tick: ${res.statusText}`);
+    return res.json();
+  },
+
+  // Phase 14: Hazard Trajectory & Early-Warning Engine
+  async getFacilityCurrentPrediction(facilityId, assetId = 'T-04', horizon = '10m') {
+    const res = await fetch(`${API_BASE}/prediction/facilities/${encodeURIComponent(facilityId)}/current?asset_id=${encodeURIComponent(assetId)}&horizon=${encodeURIComponent(horizon)}`);
+    if (!res.ok) throw new Error(`Failed to fetch current prediction for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityPredictionHistory(facilityId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/prediction/facilities/${encodeURIComponent(facilityId)}/history?${query}`);
+    if (!res.ok) throw new Error(`Failed to fetch prediction history for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityPredictionTimeline(facilityId, assetId = 'T-04') {
+    const res = await fetch(`${API_BASE}/prediction/facilities/${encodeURIComponent(facilityId)}/timeline?asset_id=${encodeURIComponent(assetId)}`);
+    if (!res.ok) throw new Error(`Failed to fetch prediction timeline for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityPredictionExplanation(facilityId, assetId = 'T-04') {
+    const res = await fetch(`${API_BASE}/prediction/facilities/${encodeURIComponent(facilityId)}/explanation?asset_id=${encodeURIComponent(assetId)}`);
+    if (!res.ok) throw new Error(`Failed to fetch prediction explanation for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async evaluateFacilityPrediction(facilityId, req) {
+    const res = await fetch(`${API_BASE}/prediction/facilities/${encodeURIComponent(facilityId)}/evaluate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req)
+    });
+    if (!res.ok) throw new Error(`Failed to evaluate prediction for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async runPredictiveBacktest(scenarioName = 'THERMAL_ESCALATION', durationMinutes = 15) {
+    const res = await fetch(`${API_BASE}/prediction/backtest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario_name: scenarioName, duration_minutes: durationMinutes })
+    });
+    if (!res.ok) throw new Error(`Failed to run predictive backtest: ${res.statusText}`);
+    return res.json();
+  },
+
+  // Phase 15: Multimodal Evidence Fusion & Trusted Hazard Assessment
+  async getFacilityCurrentFusion(facilityId, assetId = 'T-04') {
+    const res = await fetch(`${API_BASE}/fusion/facilities/${encodeURIComponent(facilityId)}/current?asset_id=${encodeURIComponent(assetId)}`);
+    if (!res.ok) throw new Error(`Failed to fetch current multimodal fusion for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityFusionHistory(facilityId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/fusion/facilities/${encodeURIComponent(facilityId)}/history?${query}`);
+    if (!res.ok) throw new Error(`Failed to fetch fusion history for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityFusionEvidence(facilityId, assetId = 'T-04') {
+    const res = await fetch(`${API_BASE}/fusion/facilities/${encodeURIComponent(facilityId)}/evidence?asset_id=${encodeURIComponent(assetId)}`);
+    if (!res.ok) throw new Error(`Failed to fetch fusion evidence for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityFusionExplanation(facilityId, assetId = 'T-04') {
+    const res = await fetch(`${API_BASE}/fusion/facilities/${encodeURIComponent(facilityId)}/explanation?asset_id=${encodeURIComponent(assetId)}`);
+    if (!res.ok) throw new Error(`Failed to fetch fusion explanation for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async evaluateFacilityFusion(facilityId, req) {
+    const res = await fetch(`${API_BASE}/fusion/facilities/${encodeURIComponent(facilityId)}/evaluate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req)
+    });
+    if (!res.ok) throw new Error(`Failed to evaluate fusion for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async runMultimodalAblation() {
+    const res = await fetch(`${API_BASE}/fusion/ablation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) throw new Error(`Failed to run multimodal ablation: ${res.statusText}`);
+    return res.json();
+  },
+
+  // ==========================================
+  // PHASE 16: ADAPTIVE SENSING & ORCHESTRATION
+  // ==========================================
+  async getFacilityAdaptiveDecision(facilityId, assetId = 'T-04') {
+    const res = await fetch(`${API_BASE}/adaptive/facilities/${encodeURIComponent(facilityId)}/current?asset_id=${encodeURIComponent(assetId)}`);
+    if (!res.ok) throw new Error(`Failed to fetch adaptive decision for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityAdaptiveHistory(facilityId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/adaptive/facilities/${encodeURIComponent(facilityId)}/history?${query}`);
+    if (!res.ok) throw new Error(`Failed to fetch adaptive history for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityAdaptiveExplanation(facilityId, assetId = 'T-04') {
+    const res = await fetch(`${API_BASE}/adaptive/facilities/${encodeURIComponent(facilityId)}/explanation?asset_id=${encodeURIComponent(assetId)}`);
+    if (!res.ok) throw new Error(`Failed to fetch adaptive explanation for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getNationalPriorityQueue() {
+    const res = await fetch(`${API_BASE}/adaptive/priority`);
+    if (!res.ok) throw new Error(`Failed to fetch national priority queue: ${res.statusText}`);
+    return res.json();
+  },
+
+  async evaluateFacilityAdaptiveMonitoring(facilityId, req) {
+    const res = await fetch(`${API_BASE}/adaptive/facilities/${encodeURIComponent(facilityId)}/evaluate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req)
+    });
+    if (!res.ok) throw new Error(`Failed to evaluate adaptive monitoring for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async acknowledgeAdaptiveDecision(facilityId, req) {
+    const res = await fetch(`${API_BASE}/adaptive/facilities/${encodeURIComponent(facilityId)}/acknowledge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req)
+    });
+    if (!res.ok) throw new Error(`Failed to acknowledge adaptive decision for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  // ==========================================
+  // PHASE 17: ADVANCED THERMAL DISCRIMINATION
+  // ==========================================
+  async getSourceDiscrimination(sourceId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/discrimination/sources/${encodeURIComponent(sourceId)}?${query}`);
+    if (!res.ok) throw new Error(`Failed to fetch discrimination for source ${sourceId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getSourceLandCoverContext(sourceId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/discrimination/sources/${encodeURIComponent(sourceId)}/land-cover?${query}`);
+    if (!res.ok) throw new Error(`Failed to fetch land cover for source ${sourceId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getSourceEOVerification(sourceId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/discrimination/sources/${encodeURIComponent(sourceId)}/eo-verification?${query}`);
+    if (!res.ok) throw new Error(`Failed to fetch EO verification for source ${sourceId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async triggerEOVerification(sourceId, payload) {
+    const res = await fetch(`${API_BASE}/discrimination/sources/${encodeURIComponent(sourceId)}/verify-eo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`Failed to trigger EO verification for ${sourceId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  // ==========================================
+  // PHASE 19: END-TO-END SYSTEM ORCHESTRATION
+  // ==========================================
+  async executePipeline(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/orchestration/pipeline/execute?${query}`, {
+      method: 'POST'
+    });
+    if (!res.ok) throw new Error(`Pipeline execution failed: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getPipelineTrace(traceId) {
+    const res = await fetch(`${API_BASE}/orchestration/pipeline/traces/${encodeURIComponent(traceId)}`);
+    if (!res.ok) throw new Error(`Failed to fetch trace ${traceId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getIncidentPacket(incidentId) {
+    const res = await fetch(`${API_BASE}/orchestration/incident-packets/${encodeURIComponent(incidentId)}`);
+    if (!res.ok) throw new Error(`Failed to fetch incident packet ${incidentId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getSystemReadiness() {
+    const res = await fetch(`${API_BASE}/orchestration/readiness`);
+    if (!res.ok) throw new Error(`Failed to fetch system readiness: ${res.statusText}`);
+    return res.json();
+  },
+
+  async listUnifiedSources() {
+    const res = await fetch(`${API_BASE}/orchestration/sources`);
+    if (!res.ok) throw new Error(`Failed to list unified sources: ${res.statusText}`);
+    return res.json();
+  },
+
+  async runGoldenScenario(scenarioId, facilityId = 'FAC-IN-DAHEJ-001') {
+    const res = await fetch(`${API_BASE}/orchestration/scenarios/${encodeURIComponent(scenarioId)}?facility_id=${encodeURIComponent(facilityId)}`);
+    if (!res.ok) throw new Error(`Failed to run scenario ${scenarioId}: ${res.statusText}`);
+    return res.json();
   }
 };
+
+
