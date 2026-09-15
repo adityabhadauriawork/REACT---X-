@@ -7,11 +7,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdal-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY backend/requirements.txt ./requirements.txt
+COPY requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY backend/app ./app
-COPY backend/worker.py ./worker.py
+COPY app ./app
+COPY worker.py ./worker.py
 
 RUN mkdir -p /app/data
 
