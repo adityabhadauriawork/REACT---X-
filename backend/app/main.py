@@ -1,8 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from sqlalchemy.orm import Session
 from app.core.config import settings
-from app.core.database import engine, Base, SessionLocal
+from app.core.database import engine, Base, SessionLocal, get_db
+from app.core.correlation import CorrelationIdMiddleware
+from app.core.metrics import PrometheusMetricsMiddleware, get_prometheus_metrics_bytes
 from app.services.site.site_service import site_service
 
 # Import API routers
@@ -24,7 +27,7 @@ from app.api.routes_thermal_fingerprints import router as thermal_fingerprints_r
 from app.api.routes_thermal_classification import router as thermal_classification_router
 from app.api.routes_thermal_corroboration import satellite_router, evidence_router
 from app.api.routes_thermal_assessment import assessment_router
-from app.api.routes_health import router as health_router
+from app.api.routes_health import router as health_router, health as health_check_handler, readiness as readiness_check_handler
 from app.api.routes_telemetry import router as telemetry_router
 from app.api.routes_vision import router as vision_router
 from app.api.routes_prediction import router as prediction_router
@@ -62,8 +65,8 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
 
-    # Start NASA FIRMS live polling background loop if key is configured
-    if settings.NASA_FIRMS_MAP_KEY:
+    # Start NASA FIRMS live polling background loop only if key is configured AND background polling is enabled
+    if settings.NASA_FIRMS_MAP_KEY and settings.ENABLE_BACKGROUND_POLL:
         firms_ingestion_service.start_background_polling()
 
     yield
@@ -77,6 +80,12 @@ app = FastAPI(
     description="SIH26162 — AI-Based Detection and Classification of Industrial Fires and Persistent Thermal Sources Using NASA FIRMS, OSM & Satellite Data",
     lifespan=lifespan
 )
+
+# Request Correlation ID tracking (attaches X-Request-ID to all responses)
+app.add_middleware(CorrelationIdMiddleware)
+
+# Prometheus operational metrics tracking (measures latency & request counts)
+app.add_middleware(PrometheusMetricsMiddleware)
 
 # CORS configuration — origins are environment-configurable (default: localhost dev origins)
 app.add_middleware(
@@ -117,7 +126,25 @@ app.include_router(discrimination_router, prefix=settings.API_V1_STR)
 app.include_router(national_router, prefix=settings.API_V1_STR)
 app.include_router(orchestration_router, prefix=settings.API_V1_STR)
 
-# Legacy /api/health is now served by routes_health.py — keeping root endpoint for backward compat
+# Prometheus Operational Metrics Exporter
+@app.get("/metrics", tags=["Observability"])
+@app.get("/api/metrics", tags=["Observability"])
+def prometheus_metrics():
+    """Returns real-time Prometheus operational metrics in standard text format."""
+    return Response(
+        content=get_prometheus_metrics_bytes(),
+        media_type="text/plain; version=0.0.4; charset=utf-8"
+    )
+
+# Root-level health and readiness probes for standard container orchestrators / load balancers
+@app.get("/health", tags=["Health & Observability"])
+def root_liveness():
+    return health_check_handler()
+
+@app.get("/readiness", tags=["Health & Observability"])
+def root_readiness(db: Session = Depends(get_db)):
+    return readiness_check_handler(db=db)
+
 @app.get("/api/version")
 def api_version():
     return {
@@ -137,3 +164,4 @@ def root_info():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
+

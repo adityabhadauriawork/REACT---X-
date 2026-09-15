@@ -93,33 +93,59 @@ class CopernicusDataSpaceService:
         limit: int = 10
     ) -> List[Dict[str, Any]]:
         """
-        Searches Sentinel-2 L2A scenes via Sentinel Hub Catalog API on Copernicus Data Space.
+        Searches Sentinel-2 L2A scenes via CDSE Sentinel Hub Catalog API (if configured)
+        or public zero-auth AWS Earth Search STAC API (free open fallback).
         Bbox format: [min_lon, min_lat, max_lon, max_lat]
         """
-        token = self.get_access_token()
-        if not token:
-            return []
-
-        search_url = f"{settings.COPERNICUS_SH_BASE_URL.rstrip('/')}/api/v1/catalog/1.0.0/search"
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        }
-
-        # Format ISO strings with Z
         start_str = start_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
         end_str = end_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
+        token = self.get_access_token()
 
+        # 1. CDSE Authenticated Search
+        if token:
+            search_url = f"{settings.COPERNICUS_SH_BASE_URL.rstrip('/')}/api/v1/catalog/1.0.0/search"
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+            body = {
+                "collections": ["sentinel-2-l2a"],
+                "datetime": f"{start_str}/{end_str}",
+                "bbox": bbox,
+                "limit": limit
+            }
+            try:
+                resp = self._session.post(
+                    search_url,
+                    json=body,
+                    headers=headers,
+                    timeout=settings.COPERNICUS_TIMEOUT_SEC
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    features = data.get("features", [])
+                    filtered = [
+                        f for f in features
+                        if float(f.get("properties", {}).get("eo:cloud_cover", 100.0)) <= max_cloud_cover_pct
+                    ]
+                    filtered.sort(key=lambda x: x.get("properties", {}).get("datetime", ""), reverse=True)
+                    logger.info("Found %d Sentinel-2 scene(s) via CDSE matching AOI [%s].", len(filtered), bbox)
+                    return filtered
+            except requests.RequestException as e:
+                logger.warning("CDSE Catalog search failed (%s); falling back to open STAC.", type(e).__name__)
+
+        # 2. Public Zero-Auth AWS Earth Search STAC Fallback
+        public_stac_url = f"{settings.AWS_EARTH_SEARCH_STAC_URL.rstrip('/')}/search"
+        headers = {"Content-Type": "application/json"}
         body = {
             "collections": ["sentinel-2-l2a"],
-            "datetime": f"{start_str}/{end_str}",
             "bbox": bbox,
+            "datetime": f"{start_str}/{end_str}",
             "limit": limit
         }
-
         try:
             resp = self._session.post(
-                search_url,
+                public_stac_url,
                 json=body,
                 headers=headers,
                 timeout=settings.COPERNICUS_TIMEOUT_SEC
@@ -127,26 +153,18 @@ class CopernicusDataSpaceService:
             if resp.status_code == 200:
                 data = resp.json()
                 features = data.get("features", [])
-                
-                # Filter by cloud cover and sort by acquisition datetime descending
-                filtered = []
-                for f in features:
-                    cc = float(f.get("properties", {}).get("eo:cloud_cover", 100.0))
-                    if cc <= max_cloud_cover_pct:
-                        filtered.append(f)
-
-                # Sort by datetime desc
-                filtered.sort(
-                    key=lambda x: x.get("properties", {}).get("datetime", ""),
-                    reverse=True
-                )
-                logger.info("Found %d Sentinel-2 scene(s) matching AOI [%s] (filtered from %d).", len(filtered), bbox, len(features))
+                filtered = [
+                    f for f in features
+                    if float(f.get("properties", {}).get("eo:cloud_cover", 100.0)) <= max_cloud_cover_pct
+                ]
+                filtered.sort(key=lambda x: x.get("properties", {}).get("datetime", ""), reverse=True)
+                logger.info("Found %d Sentinel-2 scene(s) via open AWS Earth Search STAC matching AOI [%s].", len(filtered), bbox)
                 return filtered
             else:
-                logger.warning("Sentinel Hub Catalog search failed with HTTP %d.", resp.status_code)
+                logger.warning("AWS Earth Search STAC returned HTTP %d.", resp.status_code)
                 return []
         except requests.RequestException as e:
-            logger.warning("Sentinel Hub Catalog search connection error: %s", type(e).__name__)
+            logger.debug("AWS Earth Search STAC connection skipped/offline: %s", type(e).__name__)
             return []
 
     def fetch_sentinel2_multispectral_sample(

@@ -1799,7 +1799,7 @@ export default function ThermalIntelligenceHub({
                     </span>
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Tier 1 Detection • Tier 2 Nightfire Planck • Tier 3 INSAT-3DR Geostationary • Tier 4 On-Demand SWIR/TIRS
+                    Tier 1 Detection (LIVE) • Tier 2 Nightfire Planck (ACADEMIC DATA / OFFLINE VALIDATION) • Tier 3 INSAT-3DR Geostationary (LIVE) • Tier 4 On-Demand SWIR/TIRS (LIVE)
                   </p>
                 </div>
               </div>
@@ -1817,7 +1817,7 @@ export default function ThermalIntelligenceHub({
               <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-[9px] text-slate-400 font-bold uppercase">TIER 1: Detection</span>
-                  <span className="text-[8px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">OPERATIONAL</span>
+                  <span className="text-[8px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">OPERATIONAL (LIVE)</span>
                 </div>
                 <span className="text-xs font-bold text-white block">VIIRS (375m) & MODIS (1km)</span>
                 <span className="text-[8px] text-slate-400 block mt-0.5">NOAA-20/21, Suomi-NPP, Terra/Aqua</span>
@@ -1826,10 +1826,10 @@ export default function ThermalIntelligenceHub({
               <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-[9px] text-slate-400 font-bold uppercase">TIER 2: Nightfire</span>
-                  <span className="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">PLANCK FIT</span>
+                  <span className="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">ACADEMIC DATA / OFFLINE VALIDATION</span>
                 </div>
                 <span className="text-xs font-bold text-white block">EOG VIIRS Nightfire (VNF)</span>
-                <span className="text-[8px] text-slate-400 block mt-0.5">Combustion Temp (K), Area (m²), Flux</span>
+                <span className="text-[8px] text-slate-400 block mt-0.5">Academic Dataset • Offline Planck Combustion Physics</span>
               </div>
 
               <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
@@ -2146,19 +2146,21 @@ export default function ThermalIntelligenceHub({
                                     ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
                                     : 'bg-purple-500/20 text-purple-300 border-purple-500/30'
                                 }`}>
-                                  {mem.role.replace(/_/g, ' ')}
+                                  {mem.role === 'PHYSICAL_CHARACTERIZATION' ? 'PHYSICAL (ACADEMIC VALIDATION)' : mem.role.replace(/_/g, ' ')}
                                 </span>
                               </td>
 
                               <td className="p-2.5">
                                 <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
-                                  mem.observation_status === 'OBSERVED'
+                                  mem.role === 'PHYSICAL_CHARACTERIZATION'
+                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                    : mem.observation_status === 'OBSERVED'
                                     ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                                     : mem.observation_status === 'OBSCURED'
                                     ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                                     : 'bg-slate-800 text-slate-400 border-slate-700'
                                 }`}>
-                                  {mem.observation_status}
+                                  {mem.role === 'PHYSICAL_CHARACTERIZATION' ? 'ACADEMIC DATA' : mem.observation_status}
                                 </span>
                               </td>
 

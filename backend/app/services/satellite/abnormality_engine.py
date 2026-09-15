@@ -38,7 +38,7 @@ class AbnormalityEngine:
         current_temp = current_event.brightness_temp_k if current_event else source.mean_brightness_temp_k
         current_lat = current_event.latitude if current_event else source.centroid_lat
         current_lon = current_event.longitude if current_event else source.centroid_lon
-        current_day_night = current_event.day_night if current_event else ("N" if source.night_detection_count > source.day_detection_count else "D")
+        current_day_night = current_event.day_night if current_event else ("N" if (source.night_detection_count or 0) > (source.day_detection_count or 0) else "D")
 
         # 1. Lookup or compute facility baseline profile
         fingerprint = None

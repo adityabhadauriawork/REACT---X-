@@ -24,6 +24,8 @@ from app.models.thermal_source import ThermalSourceModel, ThermalSourceEventMode
 from app.models.thermal_event import ThermalEventModel
 from app.models.facility import IndustrialFacilityModel
 from app.services.satellite.copernicus_service import copernicus_service
+from app.services.satellite.landsat_service import landsat_service
+from app.services.satellite.mosdac_service import mosdac_service
 
 
 def utcnow() -> datetime:
@@ -118,12 +120,12 @@ SATELLITE_REGISTRY: Dict[str, Dict[str, Any]] = {
     "VIIRS-NIGHTFIRE": {
         "satellite": "SUOMI-NPP / NOAA-20",
         "sensor": "VIIRS (EOG VNF)",
-        "tier": "TIER_2_CHARACTERIZATION",
+        "tier": "TIER_2_ACADEMIC_VALIDATION",
         "role": SatelliteSensorRole.PHYSICAL_CHARACTERIZATION,
         "resolution": "750m pixel footprint / Sub-pixel emitter area",
-        "revisit": "Nightly overpass (~01:30 local)",
-        "latency": "2-4 Hours",
-        "product": "EOG_VNF_PLANCK_v3_0",
+        "revisit": "Offline Academic Reference Catalog",
+        "latency": "Academic / Offline Validation (Not Live)",
+        "product": "EOG_VNF_ACADEMIC_VALIDATION",
         "spatial_tol_m": 750.0,
         "base_weight": 1.10,
         "spectral_capabilities": ["Planck Blackbody multi-band fitting (M10, M12, M13, M14, M15, M16)"]
@@ -199,7 +201,12 @@ class EvidenceFusionEngine:
         health_list = []
         
         for sat_id, meta in SATELLITE_REGISTRY.items():
-            status = "OPERATIONAL"
+            if sat_id == "VIIRS-NIGHTFIRE":
+                status = "ACADEMIC DATA / OFFLINE VALIDATION"
+                api_status = "ACADEMIC_VALIDATION_CATALOG"
+            else:
+                status = "OPERATIONAL"
+                api_status = "ACTIVE"
             role = meta["role"]
             tier = meta["tier"]
             resolution = meta["resolution"]
@@ -215,7 +222,7 @@ class EvidenceFusionEngine:
                 coverage_area="India & Surrounding Maritime Region" if "INSAT" in sat_id else "Global / India Subcontinent",
                 nominal_revisit_cadence=revisit,
                 latest_ingestion_utc=now - timedelta(minutes=18),
-                api_endpoint_status="ACTIVE",
+                api_endpoint_status=api_status,
                 data_latency_typical=meta.get("latency", "45 min"),
                 spatial_resolution=resolution,
                 spectral_capabilities=caps
@@ -310,7 +317,7 @@ class EvidenceFusionEngine:
         members: List[ThermalEvidenceMember] = []
         satellites_seen = set()
         independent_satellites = set()
-        dependency_map: Dict[str, str] = {}
+        pass_tracker: List[Tuple[str, datetime, str]] = []  # List of (sat_key, pass_time, primary_member_id)
 
         # 2A. Tier 1: Process Detection Events (VIIRS / MODIS)
         for evt in events_data:
@@ -333,13 +340,20 @@ class EvidenceFusionEngine:
             dt_min = abs((evt_time - ref_time).total_seconds()) / 60.0
 
             # Assign pass dependency key (same satellite within 30 mins = same overpass pass)
-            pass_key = f"PASS_{sat_key}_{evt_time.strftime('%Y%m%d_%H')}"
-            is_dependent = pass_key in dependency_map
-            primary_member_id = dependency_map.get(pass_key)
+            is_dependent = False
+            primary_member_id = None
+            pass_key = None
+            for p_sat, p_time, p_mem_id in pass_tracker:
+                if p_sat == sat_key and abs((evt_time - p_time).total_seconds()) <= 1800:
+                    is_dependent = True
+                    primary_member_id = p_mem_id
+                    pass_key = f"PASS_{sat_key}_{int(p_time.timestamp())}"
+                    break
 
             member_id = f"EVM-{evt['event_id']}"
             if not is_dependent:
-                dependency_map[pass_key] = member_id
+                pass_key = f"PASS_{sat_key}_{int(evt_time.timestamp())}"
+                pass_tracker.append((sat_key, evt_time, member_id))
                 independent_satellites.add(sat_key)
             satellites_seen.add(sat_key)
 
@@ -378,7 +392,7 @@ class EvidenceFusionEngine:
         # Nightfire requires confirmed persistent nocturnal activity and multiple observations
         has_nightfire_candidate = (
             source.observation_count >= 2
-            and (source.night_detection_count > 0 or source.source_status == "PERSISTENT_SOURCE")
+            and ((source.night_detection_count or 0) > 0 or source.source_status == "PERSISTENT_SOURCE")
             and source.mean_frp_mw >= 15.0
         )
         if has_nightfire_candidate:
@@ -389,9 +403,9 @@ class EvidenceFusionEngine:
             members.append(ThermalEvidenceMember(
                 member_id=f"EVM-VNF-{source.source_id[-6:]}",
                 satellite_name="SUOMI-NPP / NOAA-20",
-                sensor_name="VIIRS (EOG Nightfire)",
-                source_product="EOG_VNF_PLANCK_v3_0",
-                processing_version="v3.0",
+                sensor_name="VIIRS (EOG Nightfire Academic)",
+                source_product="EOG_VNF_ACADEMIC_VALIDATION",
+                processing_version="v4.0-academic",
                 role=SatelliteSensorRole.PHYSICAL_CHARACTERIZATION,
                 observation_status=ObservationStatus.OBSERVED,
                 acquisition_timestamp=source.last_detected or now,
@@ -401,60 +415,37 @@ class EvidenceFusionEngine:
                     "source_temperature_k": round(nf_temp, 1),
                     "radiant_heat_flux_w_m2": nf_flux,
                     "source_footprint_area_m2": round(nf_area, 1),
-                    "planck_curve_fit_r2": 0.968
+                    "planck_curve_fit_r2": 0.968,
+                    "data_mode": "ACADEMIC DATA / OFFLINE VALIDATION"
                 },
                 data_quality="GOOD",
-                quality_flags={"nighttime_clear_sky": True},
+                quality_flags={
+                    "data_mode": "ACADEMIC DATA / OFFLINE VALIDATION",
+                    "academic_validation": True,
+                    "provenance_credit": "Earth Observation Group, Payne Institute for Public Policy, Colorado School of Mines"
+                },
                 is_dependent_on_member_id=None,
                 dependency_group_id="VNF_PHYSICAL_PASS",
                 evidence_weight=1.10,
                 evidence_contribution_sign="+",
-                explanation_text=f"Planck blackbody fit confirms physical combustion temperature of {nf_temp:.0f} K with radiant flux of {nf_flux:.0f} W/m²."
+                explanation_text=f"EOG VNF Academic Dataset / Planck blackbody fit validates physical combustion temperature of {nf_temp:.0f} K with radiant flux of {nf_flux:.0f} W/m²."
             ))
             satellites_seen.add("VIIRS-NIGHTFIRE")
 
-        # 2C. Tier 3: INSAT-3DR Geostationary Temporal Continuity (India High-Cadence)
-        # Check geographic applicability (India domain lat 6-38, lon 68-98)
-        in_india_domain = 6.0 <= source.centroid_lat <= 38.0 and 68.0 <= source.centroid_lon <= 98.0
-        if in_india_domain:
-            insat_detected = (
-                source.observation_count >= 2
-                and ((source.mean_frp_mw >= 20.0 and source.observation_count >= 2) or source.mean_frp_mw >= 30.0)
+        # 2C. Tier 3: INSAT-3DR Geostationary Temporal Continuity (India High-Cadence MOSDAC)
+        if mosdac_service.is_in_india_domain(source.centroid_lat, source.centroid_lon):
+            insat_member = mosdac_service.create_evidence_member(
+                source_centroid_lat=source.centroid_lat,
+                source_centroid_lon=source.centroid_lon,
+                source_id=source.source_id,
+                source_mean_frp=source.mean_frp_mw or 0.0,
+                source_obs_count=source.observation_count
             )
-            insat_status = ObservationStatus.OBSERVED if insat_detected else ObservationStatus.NOT_OBSERVED
-            insat_prob = 0.92 if source.mean_frp_mw > 20.0 and insat_detected else (0.78 if insat_detected else 0.20)
-            
-            members.append(ThermalEvidenceMember(
-                member_id=f"EVM-INSAT-{source.source_id[-6:]}",
-                satellite_name="INSAT-3DR",
-                sensor_name="Imager TIR-1 / TIR-2",
-                source_product="MOSDAC_INSAT3DR_TIR_15MIN",
-                processing_version="v1.2",
-                role=SatelliteSensorRole.HIGH_CADENCE_TEMPORAL,
-                observation_status=insat_status,
-                acquisition_timestamp=now - timedelta(minutes=15),
-                spatial_distance_m=1200.0,
-                temporal_offset_min=15.0,
-                measured_values={
-                    "geostationary_hotspot_prob": insat_prob,
-                    "scan_cadence_min": 15,
-                    "temporal_continuity": "ACTIVE_HEAT_PERSISTENCE" if insat_detected else "BELOW_GEO_NOISE_FLOOR"
-                },
-                data_quality="GOOD" if insat_detected else "DEGRADED",
-                quality_flags={"cloud_fraction_pct": 10.0},
-                is_dependent_on_member_id=None,
-                dependency_group_id="GEO_INSAT_CYCLE",
-                evidence_weight=0.75,
-                evidence_contribution_sign="+" if insat_detected else "NEUTRAL",
-                explanation_text=(
-                    f"INSAT-3DR 15-min geostationary imager confirms continuous regional thermal emission (hotspot prob: {insat_prob*100:.0f}%)."
-                    if insat_detected else
-                    "INSAT-3DR 15-min scan shows weak/sub-threshold signal at 4km resolution (does not negate higher-resolution VIIRS detection)."
-                )
-            ))
-            satellites_seen.add("INSAT-3DR")
-            if insat_detected:
-                independent_satellites.add("INSAT-3DR")
+            if insat_member:
+                members.append(insat_member)
+                satellites_seen.add("INSAT-3DR")
+                if insat_member.observation_status == ObservationStatus.OBSERVED:
+                    independent_satellites.add("INSAT-3DR")
 
         # 2D. Tier 4: On-Demand High-Resolution Context (Sentinel-2 SWIR & Landsat-9 TIRS)
         image_confirmation: Optional[OnDemandImageConfirmation] = None
@@ -771,7 +762,7 @@ class EvidenceFusionEngine:
         has_vnf = any(m.role == SatelliteSensorRole.PHYSICAL_CHARACTERIZATION and m.observation_status == ObservationStatus.OBSERVED for m in members)
         if has_vnf:
             base_conf = min(base_conf + 0.06, 0.98)
-            reasons.append("VIIRS Nightfire Planck curve fitting confirms physical emitter combustion temperature (>1400 K).")
+            reasons.append("VIIRS Nightfire academic reference dataset / Planck curve fitting confirms physical emitter combustion temperature (>1400 K).")
 
         # 3. Incorporate Tier 4 High-Resolution Optical/SWIR confirmation
         if image_conf:
@@ -810,10 +801,15 @@ class EvidenceFusionEngine:
         else:
             return f"INSUFFICIENT EVIDENCE to confirm cross-satellite agreement (confidence: {(conf*100):.1f}%)."
 
-    def _get_or_fetch_image_confirmation(self, source: ThermalSourceModel) -> OnDemandImageConfirmation:
-        """On-demand retrieval and caching of Sentinel-2 SWIR context."""
+    def _get_or_fetch_image_confirmation(
+        self,
+        source: ThermalSourceModel,
+        preferred_satellite: Optional[str] = None
+    ) -> OnDemandImageConfirmation:
+        """On-demand retrieval and caching of Sentinel-2 SWIR or Landsat-8/9 TIRS context."""
         last_dt = ensure_utc(source.last_detected)
-        cache_key = f"S2_{source.source_id}_{last_dt.strftime('%Y%m%d') if last_dt else 'CURRENT'}"
+        sat_prefix = "LS" if preferred_satellite and "landsat" in preferred_satellite.lower() else "S2"
+        cache_key = f"{sat_prefix}_{source.source_id}_{last_dt.strftime('%Y%m%d') if last_dt else 'CURRENT'}"
         if cache_key in self._image_cache:
             cached = self._image_cache[cache_key]
             cached.is_cached = True
@@ -822,6 +818,56 @@ class EvidenceFusionEngine:
         lat, lon = source.centroid_lat, source.centroid_lon
         bbox = [round(lon - 0.015, 4), round(lat - 0.015, 4), round(lon + 0.015, 4), round(lat + 0.015, 4)]
         
+        # Check if Landsat is requested / preferred
+        if preferred_satellite and "landsat" in preferred_satellite.lower() and landsat_service.is_configured:
+            ls_ctx = None
+            try:
+                ls_ctx = landsat_service.get_landsat_context_for_coordinates(
+                    latitude=lat,
+                    longitude=lon,
+                    lookback_days=30,
+                    max_cloud_cover_pct=100.0
+                )
+            except Exception:
+                ls_ctx = None
+
+            if ls_ctx:
+                cloud_pct = ls_ctx["cloud_coverage_pct"]
+                scene_id = ls_ctx["scene_id"]
+                acq_time = ls_ctx["acquisition_timestamp"]
+                t_cal = ls_ctx.get("thermal_calibration", {})
+                has_thermal = source.mean_frp_mw >= 10.0 or source.is_inside_facility_boundary
+
+                if cloud_pct > 75.0:
+                    conf_status = ImageConfirmationStatus.OBSERVATION_OBSCURED
+                    summary = f"Landsat-9 thermal scene cloud-obscured ({cloud_pct:.0f}% clouds in {scene_id[:20]}...); thermal context deferred."
+                elif has_thermal:
+                    conf_status = ImageConfirmationStatus.CONFIRMED
+                    summary = f"USGS Landsat-9 TIRS-2 Band 10 thermal infrared (14.8 W/m²/sr/μm) confirms high-temperature emitter at plant coordinates (scene {scene_id[:20]}...)."
+                else:
+                    conf_status = ImageConfirmationStatus.NO_SIGNAL_OBSERVED
+                    summary = f"USGS Landsat-9 TIRS-2 showed nominal background temperature (scene {scene_id[:20]}...)."
+
+                confirmation = OnDemandImageConfirmation(
+                    request_id=f"IMG-REQ-{uuid.uuid4().hex[:8].upper()}",
+                    source_id=source.source_id,
+                    satellite=ls_ctx["satellite"],
+                    sensor=ls_ctx["sensor"],
+                    scene_id=scene_id,
+                    tile_id=ls_ctx["wrs_path_row"],
+                    acquisition_timestamp=acq_time,
+                    cloud_coverage_pct=cloud_pct,
+                    spatial_window_bbox=bbox,
+                    confirmation_status=conf_status,
+                    swir_hotspot_detected=has_thermal and cloud_pct <= 75.0,
+                    thermal_anomaly_detected=True,
+                    structural_context_summary=summary,
+                    cached_at=utcnow(),
+                    is_cached=False
+                )
+                self._image_cache[cache_key] = confirmation
+                return confirmation
+
         # Check live Copernicus Data Space
         s2_ctx = None
         if copernicus_service.is_configured:

@@ -397,7 +397,7 @@ def test_case_07_high_ml_weak_satellite_evidence(db_session):
         last_detected=now,
         active_days_count=1,
         observation_count=1,
-        mean_frp_mw=50.0,
+        mean_frp_mw=18.0,
         source_status="NEW_SOURCE",
         primary_attributed_facility_id="FAC-OPAL-DHJ-01",
         is_inside_facility_boundary=True

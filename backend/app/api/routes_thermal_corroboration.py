@@ -156,17 +156,18 @@ def force_recalculate_source_corroboration(
 @evidence_router.post("/sources/{source_id}/request-image-confirmation", response_model=OnDemandImageConfirmation)
 def request_on_demand_image_confirmation(
     source_id: str,
+    satellite: Optional[str] = Query(None, description="Preferred high-resolution satellite: Sentinel-2 or Landsat-9"),
     db: Session = Depends(get_db)
 ):
     """
     Request on-demand high-resolution spatial context window (Sentinel-2 SWIR or Landsat TIRS).
-    Results are cached by (source_id, overpass_date).
+    Results are cached by (satellite, source_id, overpass_date).
     """
     source = db.query(ThermalSourceModel).filter(ThermalSourceModel.source_id == source_id).first()
     if not source:
         raise HTTPException(status_code=404, detail=f"Thermal source {source_id} not found.")
 
-    confirmation = evidence_fusion_engine._get_or_fetch_image_confirmation(source)
+    confirmation = evidence_fusion_engine._get_or_fetch_image_confirmation(source, preferred_satellite=satellite)
     return confirmation
 
 

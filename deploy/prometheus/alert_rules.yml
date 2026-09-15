@@ -1,0 +1,98 @@
+# ==============================================================================
+# REACT-X Production Alert Rules
+# ==============================================================================
+# Operational threshold rules covering satellite ingestion, API latency,
+# error budgets, industrial telemetry links, and database availability.
+# ==============================================================================
+
+groups:
+  - name: reactx_operational_alerts
+    rules:
+      # ------------------------------------------------------------------------
+      # 1. SATELLITE INGESTION ALERTS
+      # ------------------------------------------------------------------------
+      - alert: FirmsIngestionFailure
+        expr: increase(firms_ingestion_failures_total[15m]) > 2
+        for: 5m
+        labels:
+          severity: critical
+          category: ingestion
+        annotations:
+          summary: "NASA FIRMS Satellite Ingestion Failure Rate High"
+          description: "NASA FIRMS polling has failed {{ $value }} times in the last 15 minutes. Verify network egress, NASA API status, or FIRMS Map Key validity."
+          runbook: "Check /api/health and verify outbound HTTPS reachability to https://firms.modaps.eosdis.nasa.gov"
+
+      - alert: FirmsIngestionLag
+        expr: (time() - firms_last_ingestion_timestamp_seconds) > 2700
+        for: 5m
+        labels:
+          severity: warning
+          category: ingestion
+        annotations:
+          summary: "NASA FIRMS Satellite Thermal Feed Lagging (>45 minutes)"
+          description: "No successful thermal ingestion cycle has completed in {{ $value }} seconds. Polling may be stalled or blocked."
+          runbook: "Check dedicated worker container logs: docker compose logs -f ingestion_worker"
+
+      # ------------------------------------------------------------------------
+      # 2. API & LATENCY ALERTS
+      # ------------------------------------------------------------------------
+      - alert: ApiHighErrorRate
+        expr: (sum(rate(http_requests_total{status_code=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 > 1
+        for: 3m
+        labels:
+          severity: critical
+          category: api
+        annotations:
+          summary: "High 5xx HTTP Error Rate on REACT-X API (>1%)"
+          description: "API error rate is {{ $value | printf \"%.2f\" }}% over the last 5 minutes."
+          runbook: "Inspect FastAPI application logs for unhandled exceptions or DB connection pool exhaustion."
+
+      - alert: ApiHighLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.500
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "API 95th Percentile Latency Exceeds 500ms"
+          description: "P95 request response time is {{ $value | printf \"%.3f\" }}s. Degraded responsiveness."
+          runbook: "Check database index utilization, PostgreSQL slow query logs, or CPU throttling."
+
+      # ------------------------------------------------------------------------
+      # 3. DATABASE & SERVICE AVAILABILITY ALERTS
+      # ------------------------------------------------------------------------
+      - alert: DatabaseUnavailable
+        expr: database_health_status == 0
+        for: 30s
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "PostgreSQL/PostGIS Database Cluster Connectivity Lost"
+          description: "The API cannot communicate with the PostgreSQL database. Pool pre-ping checks failing."
+          runbook: "Check PostgreSQL container status: docker compose ps db, inspect /var/lib/postgresql logs and disk space."
+
+      - alert: ReactxServiceUnavailable
+        expr: up{job="reactx-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "REACT-X FastAPI API Process Down"
+          description: "Prometheus cannot scrape the /metrics endpoint. API container is offline."
+          runbook: "Restart the API service: docker compose restart api"
+
+      # ------------------------------------------------------------------------
+      # 4. INDUSTRIAL TELEMETRY PROTOCOL ALERTS
+      # ------------------------------------------------------------------------
+      - alert: TelemetryConnectionDegraded
+        expr: sum(telemetry_active_connections) < 1
+        for: 5m
+        labels:
+          severity: warning
+          category: telemetry
+        annotations:
+          summary: "Industrial SCADA/IoT Protocol Connections Dropped"
+          description: "Zero active telemetry connections reported. Live plant sensor streaming offline."
+          runbook: "Check Edge Gateway status, industrial firewall rules, and OPC-UA/MQTT broker reachability."

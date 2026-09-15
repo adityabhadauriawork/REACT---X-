@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  ShieldAlert, Wind, Thermometer, Flame, Users, 
-  Navigation, Siren, FileText, CheckCircle2, AlertTriangle, 
+import {
+  ShieldAlert, Wind, Thermometer, Flame, Users,
+  Navigation, Siren, FileText, CheckCircle2, AlertTriangle,
   ArrowRight, ShieldCheck, DoorOpen, Clock, RefreshCw, Zap,
   Satellite, Building2, Radio, Cpu, Activity, ChevronDown, ChevronUp, Eye,
   Compass, Info, Layers
@@ -41,7 +41,7 @@ export default function IncidentIntelligencePanel({
 
   return (
     <div className="flex flex-col h-full bg-slate-900/90 border border-slate-800 rounded-xl overflow-hidden shadow-2xl font-mono text-xs">
-      
+
       {/* 1. Panel Header */}
       <div className="bg-slate-950 px-3.5 py-2.5 border-b border-slate-800 flex items-center justify-between">
         <div className="flex items-center space-x-2">
@@ -50,20 +50,19 @@ export default function IncidentIntelligencePanel({
             {hasSimulation ? 'Incident Command Feed' : 'Thermal Anomaly Triage'}
           </span>
         </div>
-        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-          hasSimulation 
-            ? 'bg-red-500/20 text-red-300 border-red-500/40' 
+        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${hasSimulation
+            ? 'bg-red-500/20 text-red-300 border-red-500/40'
             : (isFire ? 'bg-red-500/20 text-red-300 border-red-500/40' : (isAbnormal ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30'))
-        }`}>
-          {hasSimulation 
-            ? (risk?.risk_category || 'INCIDENT ACTIVE') 
+          }`}>
+          {hasSimulation
+            ? (risk?.risk_category || 'INCIDENT ACTIVE')
             : (isFire ? 'CRITICAL FIRE' : (isAbnormal ? 'ABNORMAL SURGE' : 'SURVEILLANCE'))}
         </span>
       </div>
 
       {/* 2. Scrollable Body */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
-        
+
         {/* A. SATELLITE THERMAL HOTSPOT TRIAGE CARD (OBSERVED -> ATTRIBUTION -> PERSISTENCE -> CLASSIFICATION -> RISK) */}
         {!hasSimulation && selectedThermalEvent && (
           <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 space-y-2.5">
@@ -237,11 +236,10 @@ export default function IncidentIntelligencePanel({
                   key={p.id}
                   type="button"
                   onClick={() => onSelectPreset && onSelectPreset(p)}
-                  className={`px-2 py-1.5 rounded text-[10px] font-bold transition-all border text-center ${
-                    isSelected
+                  className={`px-2 py-1.5 rounded text-[10px] font-bold transition-all border text-center ${isSelected
                       ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/80 shadow-sm shadow-cyan-500/20'
                       : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-white hover:border-slate-600'
-                  }`}
+                    }`}
                 >
                   <div>{p.asset_id}</div>
                   <div className="text-[8px] opacity-75 truncate">{p.chemical_id.replace('CHEM-', '')}</div>

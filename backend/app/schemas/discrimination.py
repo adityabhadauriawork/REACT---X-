@@ -69,6 +69,11 @@ class EOVerificationResult(BaseModel):
     quality_status: str = "VALIDATED"
     is_live_copernicus: bool = False
     spectral_indices: Optional[Dict[str, float]] = None
+    # Landsat USGS M2M Provenance
+    landsat_scene_id: Optional[str] = None
+    landsat_product_id: Optional[str] = None
+    is_live_landsat: bool = False
+    thermal_calibration: Optional[Dict[str, float]] = None
 
 class LandCoverContextResult(BaseModel):
     """Authoritative land-cover context for thermal coordinates."""

@@ -1,96 +1,203 @@
 version: "3.9"
 
-# SIH26162 — REACT-X Docker Compose
-# Development: SQLite (default, no separate DB service needed)
-# Production: Set DATABASE_URL=postgresql://... and enable db service via profiles
+# ==============================================================================
+# REACT-X — Production & Regional Deployment Topology
+# ==============================================================================
+# Architecture:
+#   1. Nginx (Reverse Proxy & Static Frontend Server) -> Port 80 / 443
+#   2. FastAPI API Workers (ENABLE_BACKGROUND_POLL=false) -> Internal Port 8000
+#   3. Dedicated Ingestion Worker (ENABLE_BACKGROUND_POLL=true) -> Standalone
+#   4. PostgreSQL 16 + PostGIS 3.4 -> Internal Port 5432 (Persistent Volume)
+#   5. Prometheus & Grafana (Operations & Alerting) -> Ports 9090 / 3001
+# ==============================================================================
 
 services:
-  # ─────────────────────────────────────────────
-  # BACKEND — FastAPI Python API (Port 8000)
-  # ─────────────────────────────────────────────
-  backend:
+  # ────────────────────────────────────────────────────────────────────────────
+  # 1. NGINX REVERSE PROXY & STATIC FRONTEND
+  # ────────────────────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: reactx_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - frontend_build:/usr/share/nginx/html:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - reactx_net
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 2. FASTAPI API CLUSTER (Web Services)
+  # ────────────────────────────────────────────────────────────────────────────
+  api:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
+    container_name: reactx_api
     environment:
-      # NASA FIRMS — set your 32-character MAP_KEY here or in .env
+      APP_ENV: "${APP_ENV:-production}"
+      DATABASE_URL: "${DATABASE_URL:-postgresql://reactx_admin:CHANGE_ME_SECURE_PASSWORD@db:5432/reactx_thermal}"
       NASA_FIRMS_MAP_KEY: "${NASA_FIRMS_MAP_KEY:-}"
       NASA_FIRMS_BASE_URL: "${NASA_FIRMS_BASE_URL:-https://firms.modaps.eosdis.nasa.gov/api/area/csv}"
-
-      # Database — defaults to SQLite in /app/data/
-      DATABASE_URL: "${DATABASE_URL:-sqlite:////app/data/sih26162.db}"
-
-      # FIRMS polling
-      FIRMS_POLL_INTERVAL_MINUTES: "${FIRMS_POLL_INTERVAL_MINUTES:-15}"
       FIRMS_DEFAULT_BBOX: "${FIRMS_DEFAULT_BBOX:-68.0,8.0,97.0,37.5}"
-
-      # ML
+      # API Workers MUST NOT poll satellite feeds directly
+      ENABLE_BACKGROUND_POLL: "false"
       ML_ABSTENTION_THRESHOLD: "${ML_ABSTENTION_THRESHOLD:-0.45}"
-
-      # CORS — for development; restrict in production
-      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000}"
-
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173,http://localhost:80,http://127.0.0.1:80}"
     volumes:
-      # Persist SQLite database and ML model artifacts outside container
-      - sih26162_data:/app/data
+      - reactx_app_data:/app/data
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readiness')"]
+      interval: 15s
+      timeout: 5s
       retries: 3
-      start_period: 30s
-    restart: unless-stopped
+      start_period: 20s
     depends_on:
       db:
         condition: service_healthy
-        required: false
-
-  # ─────────────────────────────────────────────
-  # FRONTEND — React/Vite (Port 5173 dev / 80 prod)
-  # ─────────────────────────────────────────────
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
     restart: unless-stopped
+    networks:
+      - reactx_net
 
-  # ─────────────────────────────────────────────
-  # DATABASE — PostgreSQL + PostGIS (OPTIONAL)
-  # Enable with: docker compose --profile production up
-  # Required for large-scale deployments; not needed for local development
-  # ─────────────────────────────────────────────
-  db:
-    image: postgis/postgis:16-3.4
-    profiles:
-      - production
+  # ────────────────────────────────────────────────────────────────────────────
+  # 3. DEDICATED INGESTION WORKER (FIRMS / STAC Satellite Ingestion)
+  # ────────────────────────────────────────────────────────────────────────────
+  ingestion_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: reactx_ingestion_worker
+    command: ["python", "worker.py"]
     environment:
-      POSTGRES_DB: sih26162_thermal
-      POSTGRES_USER: "${DB_USER:-sih26162}"
-      POSTGRES_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD must be set for production PostgreSQL}"
+      APP_ENV: "${APP_ENV:-production}"
+      DATABASE_URL: "${DATABASE_URL:-postgresql://reactx_admin:CHANGE_ME_SECURE_PASSWORD@db:5432/reactx_thermal}"
+      NASA_FIRMS_MAP_KEY: "${NASA_FIRMS_MAP_KEY:-}"
+      NASA_FIRMS_BASE_URL: "${NASA_FIRMS_BASE_URL:-https://firms.modaps.eosdis.nasa.gov/api/area/csv}"
+      FIRMS_POLL_INTERVAL_MINUTES: "${FIRMS_POLL_INTERVAL_MINUTES:-15}"
+      FIRMS_DEFAULT_BBOX: "${FIRMS_DEFAULT_BBOX:-68.0,8.0,97.0,37.5}"
+      # Exactly ONE worker has ENABLE_BACKGROUND_POLL=true
+      ENABLE_BACKGROUND_POLL: "true"
+      ML_ABSTENTION_THRESHOLD: "${ML_ABSTENTION_THRESHOLD:-0.45}"
+      COPERNICUS_CLIENT_ID: "${COPERNICUS_CLIENT_ID:-}"
+      COPERNICUS_CLIENT_SECRET: "${COPERNICUS_CLIENT_SECRET:-}"
+      USGS_M2M_USERNAME: "${USGS_M2M_USERNAME:-}"
+      USGS_M2M_TOKEN: "${USGS_M2M_TOKEN:-}"
     volumes:
-      - sih26162_pgdata:/var/lib/postgresql/data
+      - reactx_app_data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - reactx_net
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 4. DATABASE — PostgreSQL 16 + PostGIS 3.4
+  # ────────────────────────────────────────────────────────────────────────────
+  db:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: reactx_db
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-reactx_thermal}"
+      POSTGRES_USER: "${POSTGRES_USER:-reactx_admin}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-CHANGE_ME_SECURE_PASSWORD}"
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: UTC
+    volumes:
+      - reactx_pgdata:/var/lib/postgresql/data
+      - ./deploy/postgres/init-postgis.sql:/docker-entrypoint-initdb.d/01-init-postgis.sql:ro
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-sih26162} -d sih26162_thermal"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-reactx_admin} -d ${POSTGRES_DB:-reactx_thermal}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
     restart: unless-stopped
+    networks:
+      - reactx_net
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 5. FRONTEND STATIC BUILD HELPER
+  # ────────────────────────────────────────────────────────────────────────────
+  frontend_builder:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: builder
+    container_name: reactx_frontend_builder
+    volumes:
+      - frontend_build:/app/dist
+    command: ["sh", "-c", "echo 'Frontend build artifacts generated.'"]
+    networks:
+      - reactx_net
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 6. OBSERVABILITY: PROMETHEUS
+  # ────────────────────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    container_name: reactx_prometheus
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "127.0.0.1:9090:9090"
+    restart: unless-stopped
+    networks:
+      - reactx_net
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 7. OBSERVABILITY: GRAFANA
+  # ────────────────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.3.3
+    container_name: reactx_grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - reactx_net
 
 volumes:
-  sih26162_data:
+  reactx_pgdata:
     driver: local
-  sih26162_pgdata:
+  reactx_app_data:
     driver: local
+  frontend_build:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  reactx_net:
+    driver: bridge

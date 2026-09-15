@@ -1,0 +1,174 @@
+{
+  "facility_id": "FAC-IND-ODI-PAR-002",
+  "name": "Indian Oil Paradip Refinery & Petrochemical Complex",
+  "operator_name": "Indian Oil Corporation Limited (IOCL)",
+  "facility_type": "PETROCHEMICAL",
+  "subtype": "Crude Distillation, Catalytic Cracking & Polypropylene Unit",
+  "state": "Odisha",
+  "district": "Jagatsinghpur",
+  "country": "India",
+  "cluster_name": "Paradip Industrial Corridor",
+  "center_lat": 20.2854,
+  "center_lon": 86.6432,
+  "fence_radius_m": 2500.0,
+  "risk_level": "High",
+  "erdmp_license": "ERDMP/IOCL/PARADIP/2024/09",
+  "boundary_geojson": {
+    "type": "Polygon",
+    "coordinates": [[
+      [86.6200, 20.2650],
+      [86.6700, 20.2650],
+      [86.6700, 20.3050],
+      [86.6200, 20.3050],
+      [86.6200, 20.2650]
+    ]]
+  },
+  "hazard_profile": {
+    "major_chemicals": ["Crude Oil", "Propylene", "LPG", "Benzene", "Hydrogen"],
+    "primary_hazard": "Hydrocarbon Vapor Cloud Explosion & Boilover Risk",
+    "domino_susceptibility": "HIGH",
+    "criticality_tier": "TIER_1_CRITICAL_NATIONAL_INFRASTRUCTURE"
+  },
+  "areas": [
+    {
+      "area_id": "AREA-PAR-CRUDE-01",
+      "name": "Atmospheric & Vacuum Distillation Unit (AVU)",
+      "risk_level": "CRITICAL"
+    },
+    {
+      "area_id": "AREA-PAR-FCCU-02",
+      "name": "Indmax Fluidized Catalytic Cracking Unit (INDMAX-FCCU)",
+      "risk_level": "CRITICAL"
+    },
+    {
+      "area_id": "AREA-PAR-TANKAGE-03",
+      "name": "Crude Oil & Hydrocarbon Tank Farm Storage",
+      "risk_level": "HIGH"
+    }
+  ],
+  "assets": [
+    {
+      "id": "AST-PAR-AVU-COL-01",
+      "name": "Crude Atmospheric Distillation Column C-101",
+      "asset_type": "DISTILLATION_COLUMN",
+      "lat": 20.2860,
+      "lon": 86.6420,
+      "chemical_id": "CHEM-CRUDE-01",
+      "capacity_m3": 15000.0,
+      "current_fill_pct": 78.5,
+      "pressure_bar": 3.8,
+      "temperature_c": 365.0
+    },
+    {
+      "id": "AST-PAR-FCC-REG-01",
+      "name": "Indmax FCCU Regenerator Vessel R-201",
+      "asset_type": "CATALYTIC_REACTOR",
+      "lat": 20.2875,
+      "lon": 86.6445,
+      "chemical_id": "CHEM-PROPYLENE-01",
+      "capacity_m3": 8500.0,
+      "current_fill_pct": 65.0,
+      "pressure_bar": 2.6,
+      "temperature_c": 710.0
+    },
+    {
+      "id": "AST-PAR-TK-501",
+      "name": "Crude Storage Floating Roof Tank T-501",
+      "asset_type": "STORAGE_TANK",
+      "lat": 20.2820,
+      "lon": 86.6400,
+      "chemical_id": "CHEM-CRUDE-01",
+      "capacity_m3": 80000.0,
+      "current_fill_pct": 82.0,
+      "pressure_bar": 1.01,
+      "temperature_c": 32.0
+    }
+  ],
+  "sensors": [
+    {
+      "sensor_id": "SNS-PAR-TEMP-101",
+      "tag_name": "TI_AVU_101",
+      "sensor_type": "TEMPERATURE",
+      "asset_id": "AST-PAR-AVU-COL-01",
+      "unit": "C",
+      "valid_range_min": 0.0,
+      "valid_range_max": 500.0,
+      "critical_max": 420.0
+    },
+    {
+      "sensor_id": "SNS-PAR-PRESS-102",
+      "tag_name": "PI_FCC_201",
+      "sensor_type": "PRESSURE",
+      "asset_id": "AST-PAR-FCC-REG-01",
+      "unit": "bar",
+      "valid_range_min": 0.0,
+      "valid_range_max": 10.0,
+      "critical_max": 5.0
+    },
+    {
+      "sensor_id": "SNS-PAR-GAS-103",
+      "tag_name": "GD_TK_501_LEL",
+      "sensor_type": "GAS_LEL",
+      "asset_id": "AST-PAR-TK-501",
+      "unit": "%LEL",
+      "valid_range_min": 0.0,
+      "valid_range_max": 100.0,
+      "critical_max": 20.0
+    }
+  ],
+  "cameras": [
+    {
+      "camera_id": "CAM-PAR-IR-01",
+      "name": "INDMAX Flare & Regenerator Thermal Camera",
+      "lat": 20.2880,
+      "lon": 86.6450,
+      "type": "THERMAL_OPTICAL_DUAL",
+      "stream_url": "rtsp://edge-gateway-par01.internal/stream/cam01"
+    },
+    {
+      "camera_id": "CAM-PAR-PTZ-02",
+      "name": "Crude Tank Farm Perimeter PTZ Camera",
+      "lat": 20.2810,
+      "lon": 86.6390,
+      "type": "PTZ_OPTICAL_4K",
+      "stream_url": "rtsp://edge-gateway-par01.internal/stream/cam02"
+    }
+  ],
+  "response_plan": {
+    "onsite_commander": "IOCL Paradip Chief Fire & Safety Officer",
+    "district_eoc": "Jagatsinghpur District Emergency Operation Centre",
+    "nearest_fire_stations": [
+      {
+        "name": "IOCL Paradip Refinery Fire Station",
+        "distance_km": 0.8,
+        "foam_tender_count": 8
+      },
+      {
+        "name": "Paradip Port Trust Fire Brigade",
+        "distance_km": 4.5,
+        "foam_tender_count": 4
+      }
+    ],
+    "water_sources": [
+      {
+        "name": "Mahanadi River Intake & Industrial Reservoir",
+        "capacity_m3": 500000.0,
+        "pump_capacity_gpm": 12000
+      }
+    ],
+    "evacuation_assembly_points": [
+      {
+        "name": "Assembly Point East (Gate 4)",
+        "lat": 20.2890,
+        "lon": 86.6500,
+        "capacity": 800
+      },
+      {
+        "name": "Assembly Point South (Admin Complex)",
+        "lat": 20.2780,
+        "lon": 86.6410,
+        "capacity": 1500
+      }
+    ]
+  }
+}

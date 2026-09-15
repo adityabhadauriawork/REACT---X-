@@ -1,6 +1,7 @@
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL)
   ? import.meta.env.VITE_API_BASE_URL
-  : 'http://127.0.0.1:8000/api';
+  : '/api';
+
 
 export const api = {
   // 1. Plant Site
@@ -710,6 +711,12 @@ export const api = {
   async getThermalClassification(sourceId) {
     const res = await fetch(`${API_BASE}/thermal/classification/${encodeURIComponent(sourceId)}`);
     if (!res.ok) throw new Error(`Failed to classify thermal source ${sourceId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async classifyThermalEvent(eventId) {
+    const res = await fetch(`${API_BASE}/thermal/classify/${encodeURIComponent(eventId)}`);
+    if (!res.ok) throw new Error(`Failed to classify thermal event ${eventId}: ${res.statusText}`);
     return res.json();
   },
 

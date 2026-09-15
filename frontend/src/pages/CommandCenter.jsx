@@ -875,8 +875,8 @@ export default function CommandCenter() {
                         <span className="text-emerald-400 font-bold">ACTIVE (1km Thermal)</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">VIIRS Nightfire (EOG Planck Engine):</span>
-                        <span className="text-emerald-400 font-bold">CALIBRATED</span>
+                        <span className="text-slate-400">VIIRS Nightfire (EOG Academic):</span>
+                        <span className="text-amber-300 font-bold text-[10px]">ACADEMIC DATA / OFFLINE VALIDATION</span>
                       </div>
                     </div>
 

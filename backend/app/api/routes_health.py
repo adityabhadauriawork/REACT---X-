@@ -71,19 +71,37 @@ def health():
 # GET /api/readiness — deep readiness check
 # ---------------------------------------------------------------------------
 @router.get("/readiness", summary="Dependency readiness probe")
-def readiness(db: Session = Depends(get_db)):
+def readiness(db: Optional[Session] = Depends(get_db)):
     """
     Returns 200 only if all required dependencies are ready.
     Returns 503 if any critical dependency is unavailable.
-    Distinguishes: process alive vs dependencies ready.
+    Distinguishes: process alive (liveness) vs dependencies ready (readiness).
     """
     checks: Dict[str, Any] = {}
 
-    # 1. Database
-    db_ok = _db_alive(db)
+    # 1. Database connectivity check
+    db_ok = False
+    if db is not None:
+        try:
+            db.execute(text("SELECT 1"))
+            db_ok = True
+        except Exception:
+            db_ok = False
+    else:
+        try:
+            from app.core.database import SessionLocal
+            fallback_db = SessionLocal()
+            try:
+                fallback_db.execute(text("SELECT 1"))
+                db_ok = True
+            finally:
+                fallback_db.close()
+        except Exception:
+            db_ok = False
+
     checks["database"] = {"status": "ready" if db_ok else "unavailable", "required": True}
 
-    # 2. ML model
+    # 2. ML model loaded check
     ml_ok = _ml_model_loaded()
     checks["ml_classifier"] = {
         "status": "loaded" if ml_ok else "not_loaded",
@@ -99,7 +117,7 @@ def readiness(db: Session = Depends(get_db)):
         "note": "Set NASA_FIRMS_MAP_KEY env var for live satellite data"
     }
 
-    # Overall status: only DB is required for readiness
+    # Overall status: DB is required for readiness
     all_required_ok = db_ok
     http_status = 200 if all_required_ok else 503
 

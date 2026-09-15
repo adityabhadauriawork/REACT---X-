@@ -407,6 +407,11 @@ class FIRMSService:
                     src, _ = clustering_engine.attach_or_create_source(m, db=db)
                     source_attribution_engine.attribute_source(src, db=db)
                     abnormality_engine.assess_thermal_source(src, m, db=db)
+                    from app.services.ml.thermal_classifier_service import classifier_service
+                    cls_res = classifier_service.classify_source(src, event=m, db=db)
+                    m.classification = cls_res.predicted_class
+                    m.classification_confidence = cls_res.model_confidence
+                    m.model_version = cls_res.model_version
                 db.commit()
             except Exception as e:
                 db.rollback()
@@ -515,9 +520,48 @@ class FIRMSService:
                             processing_status=row.processing_status,
                             h3_index=row.h3_index,
                             geometry=geom,
-                            classification=row.classification or "UNCLASSIFIED",
-                            classification_confidence=row.classification_confidence or 0.0,
-                            persistence_category=row.persistence_category or "UNCLASSIFIED",
+                        cls_name = row.classification
+                        cls_conf = row.classification_confidence
+                        if not cls_name or cls_name == "UNCLASSIFIED":
+                            try:
+                                from app.services.ml.thermal_classifier_service import classifier_service
+                                cls_res = classifier_service.classify_event(row, db=db)
+                                cls_name = cls_res.predicted_class
+                                cls_conf = cls_res.model_confidence
+                                row.classification = cls_name
+                                row.classification_confidence = cls_conf
+                            except Exception:
+                                cls_name = "OTHER_UNKNOWN"
+                                cls_conf = 0.50
+
+                        results.append(CanonicalThermalEvent(
+                            event_id=row.event_id,
+                            dedup_key=row.dedup_key,
+                            source=row.source,
+                            source_satellite=row.source_satellite,
+                            sensor_name=row.sensor_name,
+                            source_version=row.source_version,
+                            acquisition_timestamp=row.acquisition_timestamp,
+                            latitude=row.latitude,
+                            longitude=row.longitude,
+                            frp_mw=row.frp_mw,
+                            brightness_temp_k=row.brightness_temp_k,
+                            brightness_temp_i4_k=row.brightness_temp_i4_k,
+                            confidence=row.confidence,
+                            confidence_pct=row.confidence_pct,
+                            day_night=row.day_night,
+                            scan=row.scan,
+                            track=row.track,
+                            ingested_at=row.ingested_at,
+                            is_live_data=row.is_live_data,
+                            data_quality_status=row.data_quality_status,
+                            data_quality_flags=row.data_quality_flags or [],
+                            processing_status=row.processing_status,
+                            h3_index=row.h3_index,
+                            geometry=geom,
+                            classification=cls_name or "OTHER_UNKNOWN",
+                            classification_confidence=cls_conf or 0.50,
+                            persistence_category=row.persistence_category or "TRANSIENT",
                             abnormality_score=row.abnormality_score or 0.0,
                             attributed_facility_id=row.attributed_facility_id,
                             attributed_facility_name=row.attributed_facility_name,
@@ -525,6 +569,11 @@ class FIRMSService:
                             is_inside_facility_boundary=row.is_inside_facility_boundary or False,
                             model_version=row.model_version
                         ))
+                    if db:
+                        try:
+                            db.commit()
+                        except Exception:
+                            pass
                     return results
             except Exception as e:
                 logger.warning(f"Database query failed, falling back to memory registry: {e}")
@@ -592,10 +641,49 @@ class FIRMSService:
                         data_quality_flags=row.data_quality_flags or [],
                         processing_status=row.processing_status,
                         h3_index=row.h3_index,
+                    cls_name = row.classification
+                    cls_conf = row.classification_confidence
+                    if not cls_name or cls_name == "UNCLASSIFIED":
+                        try:
+                            from app.services.ml.thermal_classifier_service import classifier_service
+                            cls_res = classifier_service.classify_event(row, db=db)
+                            cls_name = cls_res.predicted_class
+                            cls_conf = cls_res.model_confidence
+                            row.classification = cls_name
+                            row.classification_confidence = cls_conf
+                            db.commit()
+                        except Exception:
+                            cls_name = "OTHER_UNKNOWN"
+                            cls_conf = 0.50
+
+                    return CanonicalThermalEvent(
+                        event_id=row.event_id,
+                        dedup_key=row.dedup_key,
+                        source=row.source,
+                        source_satellite=row.source_satellite,
+                        sensor_name=row.sensor_name,
+                        source_version=row.source_version,
+                        acquisition_timestamp=row.acquisition_timestamp,
+                        latitude=row.latitude,
+                        longitude=row.longitude,
+                        frp_mw=row.frp_mw,
+                        brightness_temp_k=row.brightness_temp_k,
+                        brightness_temp_i4_k=row.brightness_temp_i4_k,
+                        confidence=row.confidence,
+                        confidence_pct=row.confidence_pct,
+                        day_night=row.day_night,
+                        scan=row.scan,
+                        track=row.track,
+                        ingested_at=row.ingested_at,
+                        is_live_data=row.is_live_data,
+                        data_quality_status=row.data_quality_status,
+                        data_quality_flags=row.data_quality_flags or [],
+                        processing_status=row.processing_status,
+                        h3_index=row.h3_index,
                         geometry=geom,
-                        classification=row.classification or "UNCLASSIFIED",
-                        classification_confidence=row.classification_confidence or 0.0,
-                        persistence_category=row.persistence_category or "UNCLASSIFIED",
+                        classification=cls_name or "OTHER_UNKNOWN",
+                        classification_confidence=cls_conf or 0.50,
+                        persistence_category=row.persistence_category or "TRANSIENT",
                         abnormality_score=row.abnormality_score or 0.0,
                         attributed_facility_id=row.attributed_facility_id,
                         attributed_facility_name=row.attributed_facility_name,

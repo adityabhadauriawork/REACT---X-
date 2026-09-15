@@ -193,6 +193,8 @@ class VIIRSNightfireCharacterization(BaseModel):
     planck_curve_fit_quality: float
     estimated_emissions_co2_eq_kg_hr: Optional[float] = None
     gas_flaring_methane_combustion_eff_pct: Optional[float] = 98.2
+    data_mode: str = "ACADEMIC DATA / OFFLINE VALIDATION"
+    provenance_credit: str = "Earth Observation Group, Payne Institute for Public Policy, Colorado School of Mines"
 
 class MultiSatelliteConfirmation(BaseModel):
     event_id: str

@@ -67,8 +67,18 @@ class ThermalClassifierService:
 
         spat_stab = float(fingerprint.spatial_stability_score if fingerprint else 0.85)
         r95 = float(fingerprint.spatial_dispersion_radius_m if fingerprint else 250.0)
-        fac_dist = float(source.facility_distance_m or 0.0)
-        is_inside = 1.0 if (source.is_inside_facility_boundary or fac_dist < 100.0) else 0.0
+        if source.facility_distance_m is not None:
+            fac_dist = float(source.facility_distance_m)
+        elif event and getattr(event, 'facility_distance_m', None) is not None:
+            fac_dist = float(event.facility_distance_m)
+        else:
+            fac_dist = 50000.0
+
+        is_inside = 1.0 if (
+            source.is_inside_facility_boundary or 
+            (event and getattr(event, 'is_inside_facility_boundary', False)) or 
+            (source.facility_distance_m is not None and fac_dist < 100.0)
+        ) else 0.0
 
         act_days = float(source.active_days_count or 1)
         obs_count = float(source.observation_count or 1)
@@ -139,8 +149,11 @@ class ThermalClassifierService:
 
         spat_stab = float(features.get("spatial_stability", 0.80))
         r95 = float(features.get("dispersion_radius_r95", 250.0))
-        fac_dist = float(features.get("facility_distance_m", 0.0))
-        is_inside = float(features.get("is_inside_facility", 1.0 if fac_dist < 150.0 else 0.0))
+        if "facility_distance_m" in features and features["facility_distance_m"] is not None:
+            fac_dist = float(features["facility_distance_m"])
+        else:
+            fac_dist = 0.0 if features.get("is_inside_facility") else 50000.0
+        is_inside = float(features.get("is_inside_facility", 1.0 if fac_dist < 100.0 else 0.0))
 
         act_days = float(features.get("active_days", 30))
         obs_count = float(features.get("observation_count", 40))
@@ -189,8 +202,13 @@ class ThermalClassifierService:
             is_ood = (ood_score == -1)
 
         # 2. Calibrated Model Inference
+        import time
+        from app.core.metrics import record_ml_inference
+
         clf = self.pipeline.calibrated_model or self.pipeline.primary_model
+        t0 = time.perf_counter()
         probs = clf.predict_proba(X)[0]
+        inference_duration = time.perf_counter() - t0
         clf_classes = list(getattr(clf, "classes_", self.pipeline.classes or CLASSES))
 
         # Build class probabilities dictionary
@@ -200,6 +218,12 @@ class ThermalClassifierService:
         sorted_classes = sorted(prob_dict.items(), key=lambda x: x[1], reverse=True)
         top_class, top_prob = sorted_classes[0]
         alt_class, alt_prob = sorted_classes[1] if len(sorted_classes) > 1 else (None, None)
+
+        record_ml_inference(
+            model=self.pipeline.metadata.get("model_name", "HistGradientBoostingClassifier"),
+            predicted_class=str(top_class),
+            duration_sec=inference_duration
+        )
 
         # 3. System Confidence & Classification State Governance
         obs_count = features.get("observation_count", 1)
@@ -217,8 +241,10 @@ class ThermalClassifierService:
         system_confidence = round(float(top_prob * data_sufficiency_penalty), 3)
 
         # Determine Operational Classification State
-        if obs_count < 2:
+        if obs_count < 2 or features.get("incomplete_data", False):
             state = ClassificationState.INSUFFICIENT_DATA.value
+            if not is_inside and top_class == TargetSourceClass.INDUSTRIAL_FIRE.value:
+                top_class = TargetSourceClass.OTHER_UNKNOWN.value
         elif is_ood:
             state = ClassificationState.MODEL_COVERAGE_LIMITED.value
         elif top_prob < 0.45:
@@ -311,6 +337,79 @@ class ThermalClassifierService:
             facility_name=source.primary_attributed_facility_name or (facility.name if facility else None),
             db=db
         )
+
+    def classify_event(
+        self,
+        event: Any,
+        db: Optional[Session] = None
+    ) -> ThermalClassificationResult:
+        """
+        Classifies an active thermal event by resolving its spatiotemporal source,
+        facility attribution, and 23-feature vector.
+        """
+        from app.models.thermal_source import ThermalSourceEventModel
+        from app.services.satellite.clustering_engine import clustering_engine
+        from app.services.satellite.source_attribution_engine import source_attribution_engine
+
+        src = None
+        event_id = getattr(event, "event_id", None)
+        if db and event_id:
+            link = db.query(ThermalSourceEventModel).filter(ThermalSourceEventModel.event_id == event_id).first()
+            if link:
+                src = db.query(ThermalSourceModel).filter(ThermalSourceModel.source_id == link.source_id).first()
+            if not src:
+                src, _ = clustering_engine.attach_or_create_source(event, db=db)
+            if src and not src.primary_attributed_facility_id:
+                source_attribution_engine.attribute_source(src, db=db)
+
+        if src:
+            result = self.classify_source(source=src, event=event, db=db)
+        else:
+            frp_cur = float(getattr(event, "frp_mw", 15.0) or 15.0)
+            temp_cur = float(getattr(event, "brightness_temp_k", 330.0) or 330.0)
+            fac_dist = float(getattr(event, "facility_distance_m", 50000.0) or 50000.0)
+            is_inside = 1.0 if getattr(event, "is_inside_facility_boundary", False) or fac_dist < 100.0 else 0.0
+            day_night = getattr(event, "day_night", "D")
+
+            features = {
+                "frp_current": frp_cur,
+                "frp_median": frp_cur,
+                "frp_robust_zscore": 0.0,
+                "frp_percentile": 50.0,
+                "frp_iqr": max(1.0, frp_cur * 0.3),
+                "frp_mad": max(1.0, frp_cur * 0.2),
+                "temp_current": temp_cur,
+                "temp_median": 330.0,
+                "temp_percentile": 50.0,
+                "temp_departure_k": temp_cur - 330.0,
+                "spatial_stability": 0.50,
+                "dispersion_radius_r95": 300.0,
+                "facility_distance_m": fac_dist,
+                "is_inside_facility": is_inside,
+                "active_days": 1.0,
+                "observation_count": 1.0,
+                "recurrence_rate": 0.01,
+                "detection_rate": 0.5,
+                "day_night_ratio": 1.0,
+                "night_fraction": 1.0 if day_night == "N" else 0.0,
+                "seasonal_deviation": 1.0,
+                "sta_overlap": 0.0,
+                "satellite_count": 1.0
+            }
+            result = self.classify_features(
+                features=features,
+                source_id=f"SRC-EVT-{event_id[:8]}" if event_id else "SRC-STANDALONE",
+                facility_id=getattr(event, "attributed_facility_id", None),
+                facility_name=getattr(event, "attributed_facility_name", None),
+                db=db
+            )
+
+        if hasattr(event, "classification"):
+            event.classification = result.predicted_class
+            event.classification_confidence = result.model_confidence
+            event.model_version = result.model_version
+
+        return result
 
     def _build_explanation(
         self,

@@ -117,10 +117,14 @@ def get_thermal_source_classification(source_id: str, db: Session = Depends(get_
             created_at=cached.created_at
         )
 
-    # 2. Look up the thermal source object
+    # 2. Look up the thermal source object or event object
     source = db.query(ThermalSourceModel).filter(ThermalSourceModel.source_id == source_id).first()
     if not source:
-        raise HTTPException(status_code=404, detail=f"Thermal source {source_id} not found.")
+        from app.models.thermal_event import ThermalEventModel
+        event = db.query(ThermalEventModel).filter(ThermalEventModel.event_id == source_id).first()
+        if event:
+            return classifier_service.classify_event(event=event, db=db)
+        raise HTTPException(status_code=404, detail=f"Thermal source or event {source_id} not found.")
 
     # 3. Perform on-the-fly inference & persist
     result = classifier_service.classify_source(source=source, db=db)

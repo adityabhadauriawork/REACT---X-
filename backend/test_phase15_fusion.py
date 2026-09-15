@@ -76,7 +76,9 @@ def test_scenario_a_all_sources_agree_normal():
     from app.services.industrial.telemetry_simulator import telemetry_simulator, SimulationScenario
     from app.services.vision.camera_simulator import camera_simulator
     from app.services.vision.vision_pipeline_service import vision_pipeline_service
+    from app.services.industrial.telemetry_service import telemetry_service
     telemetry_simulator.set_scenario(SimulationScenario.NORMAL)
+    telemetry_service.generate_simulator_tick(force_all=True)
     camera_simulator.set_scenario("NORMAL")
     vision_pipeline_service.generate_simulator_tick()
     asm = multimodal_fusion_service.evaluate_facility_fusion(

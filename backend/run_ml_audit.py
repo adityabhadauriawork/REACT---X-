@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 import numpy as np
 import joblib
 from sklearn.metrics import (
@@ -183,11 +184,14 @@ for name, f_indices in ablation_configs.items():
 print("\n============================================================")
 print("5. SAVED MODEL ARTIFACT INTEGRITY CHECK")
 print("============================================================")
-saved = joblib.load("app/models/thermal_classifier_v1.joblib")
-with open("app/models/thermal_classifier_metadata.json") as f:
+model_path = Path(__file__).resolve().parent / "app" / "models" / "thermal_classifier_v1.joblib"
+meta_path = Path(__file__).resolve().parent / "app" / "models" / "thermal_classifier_metadata.json"
+saved = joblib.load(model_path)
+with open(meta_path) as f:
     saved_meta = json.load(f)
 
 print("Saved model classes:", saved.get("classes"))
 print("Metadata model name:", saved_meta.get("model_name"))
 print("Metadata primary model:", saved_meta.get("primary_model_type"))
 print("Metadata reported Macro F1:", saved_meta.get("macro_f1"))
+print("Metadata reported Industrial Fire Recall:", saved_meta.get("industrial_fire_recall"))

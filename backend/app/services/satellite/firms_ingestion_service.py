@@ -254,10 +254,15 @@ class FIRMSIngestionService:
             self.status.duplicates_skipped_total += summary.duplicates_skipped
             self.status.records_rejected_total += summary.records_rejected_invalid
 
+            # Prometheus operational metrics recording
+            from app.core.metrics import record_firms_cycle, record_firms_events
+            record_firms_events(fetched=summary.records_received, persisted=summary.records_persisted)
+
             if cycle_errors and not all_raw_records:
                 self.status.failed_polls_count += 1
                 self.status.last_error = "; ".join(cycle_errors)
                 self.status.last_error_timestamp = datetime.now(timezone.utc)
+                record_firms_cycle(status="error")
             else:
                 self.status.successful_polls_count += 1
                 self.status.last_successful_poll_timestamp = datetime.now(timezone.utc)
@@ -265,8 +270,10 @@ class FIRMSIngestionService:
                     self.status.last_successful_acquisition_timestamp = datetime.now(timezone.utc)
                 if cycle_errors:
                     self.status.last_error = f"Partial success with errors: {'; '.join(cycle_errors)}"
+                    record_firms_cycle(status="partial_error")
                 else:
                     self.status.last_error = None
+                    record_firms_cycle(status="success")
 
             self.status.last_ingestion_summary = {
                 "records_received": summary.records_received,
@@ -299,16 +306,30 @@ class FIRMSIngestionService:
                 logger.error(f"Scheduled FIRMS poll encounter exception: {e}")
                 self.status.last_error = str(e)
                 self.status.last_error_timestamp = datetime.now(timezone.utc)
+                from app.core.metrics import record_firms_cycle
+                record_firms_cycle(status="exception")
             
             interval_sec = max(60, settings.FIRMS_POLL_INTERVAL_MINUTES * 60)
             await asyncio.sleep(interval_sec)
 
-    def start_background_polling(self):
-        """Start the background ingestion poller if not already running."""
+    def start_background_polling(self, force: bool = False) -> bool:
+        """
+        Start the background ingestion poller if enabled and not already running.
+        Guards against redundant poller execution in multi-worker API server setups.
+        """
+        if not (settings.ENABLE_BACKGROUND_POLL or force):
+            logger.info("NASA FIRMS background polling is disabled for this process (ENABLE_BACKGROUND_POLL=false).")
+            return False
+
         if not self.status.is_polling_active:
             self.status.is_polling_active = True
-            loop = asyncio.get_event_loop()
-            self._background_task = loop.create_task(self._poller_loop())
+            try:
+                loop = asyncio.get_running_loop()
+                self._background_task = loop.create_task(self._poller_loop())
+            except RuntimeError:
+                logger.debug("No active running event loop found when initializing background poller.")
+            return True
+        return False
 
     def stop_background_polling(self):
         """Stop background polling task."""
@@ -321,3 +342,4 @@ class FIRMSIngestionService:
         return self.status.to_dict()
 
 firms_ingestion_service = FIRMSIngestionService()
+

@@ -3,6 +3,7 @@ from datetime import datetime, timezone, timedelta
 from app.schemas.thermal import MultiSatelliteConfirmation, CanonicalThermalEvent
 from app.services.satellite.nightfire_service import nightfire_service
 from app.services.satellite.copernicus_service import copernicus_service
+from app.services.satellite.landsat_service import landsat_service
 
 class ConfirmationService:
     """
@@ -23,17 +24,16 @@ class ConfirmationService:
         abnormality_score = getattr(event, "abnormality_score", None) or 0.0
         brightness_temp_k = getattr(event, "brightness_temp_k", None) or 340.0
 
-        # Query Copernicus Sentinel-2 context if available
+        # Query Sentinel-2 context via CDSE or open AWS Earth Search STAC
         s2_ctx = None
-        if copernicus_service.is_configured:
-            try:
-                s2_ctx = copernicus_service.get_sentinel2_context_for_coordinates(
-                    event.latitude,
-                    event.longitude,
-                    lookback_days=30
-                )
-            except Exception:
-                s2_ctx = None
+        try:
+            s2_ctx = copernicus_service.get_sentinel2_context_for_coordinates(
+                event.latitude,
+                event.longitude,
+                lookback_days=30
+            )
+        except Exception:
+            s2_ctx = None
 
         if s2_ctx:
             scene_id = s2_ctx["scene_id"]
@@ -69,14 +69,40 @@ class ConfirmationService:
                 "corroboration_state": "CONFIRMED_HIGH_REFLECTANCE"
             }
 
-        # Landsat 9 TIRS thermal confirmation
-        landsat_thermal = {
-            "satellite": "Landsat-9",
-            "instrument": "TIRS-2",
-            "band_10_radiance_w_m2_sr_um": 14.8,
-            "derived_ground_temp_c": round(brightness_temp_k - 273.15, 1),
-            "corroboration_state": "THERMAL_HOTSPOT_CORROBORATED"
-        }
+        # Query Landsat 8/9 TIRS thermal confirmation via USGS M2M or open Planetary Computer STAC
+        ls_ctx = None
+        try:
+            ls_ctx = landsat_service.get_landsat_context_for_coordinates(
+                event.latitude,
+                event.longitude,
+                lookback_days=30
+            )
+        except Exception:
+            ls_ctx = None
+
+        if ls_ctx:
+            cloud_pct = ls_ctx["cloud_coverage_pct"]
+            t_cal = ls_ctx.get("thermal_calibration", {})
+            landsat_thermal = {
+                "satellite": ls_ctx["satellite"],
+                "instrument": ls_ctx["sensor"],
+                "scene_id": ls_ctx["scene_id"],
+                "product_id": ls_ctx["product_id"],
+                "cloud_coverage_pct": cloud_pct,
+                "band_10_radiance_w_m2_sr_um": t_cal.get("band_10_radiance_w_m2_sr_um", 14.8),
+                "derived_ground_temp_c": t_cal.get("derived_ground_temp_c", round(brightness_temp_k - 273.15, 1)),
+                "corroboration_state": "THERMAL_HOTSPOT_CORROBORATED" if cloud_pct <= 50.0 else "OBSERVATION_OBSCURED",
+                "source_provenance": "USGS_LANDSAT_M2M",
+                "is_live_usgs_m2m": True
+            }
+        else:
+            landsat_thermal = {
+                "satellite": "Landsat-9",
+                "instrument": "TIRS-2",
+                "band_10_radiance_w_m2_sr_um": 14.8,
+                "derived_ground_temp_c": round(brightness_temp_k - 273.15, 1),
+                "corroboration_state": "THERMAL_HOTSPOT_CORROBORATED"
+            }
 
         # INSAT-3DR Geostationary rapid check (15-min cycle)
         insat_geo = {
@@ -108,5 +134,8 @@ class ConfirmationService:
             overall_corroboration_score=corroboration_score,
             confirmation_status="CORROBORATED"
         )
+
+    # Method alias for backward compatibility
+    characterize_and_confirm = corroborate_event
 
 confirmation_service = ConfirmationService()

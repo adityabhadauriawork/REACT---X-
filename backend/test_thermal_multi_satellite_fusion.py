@@ -500,7 +500,7 @@ def test_scenario_13_scale_throughput_benchmark(db_session):
     Benchmark spatiotemporal matching distance & sensor weighting performance.
     Evaluates 10,000 synthetic source lookups against multi-sensor geometry.
     """
-    start_time = time.time()
+    start_time = time.perf_counter()
     n_iterations = 10000
 
     lat0, lon0 = 21.6982, 72.5841
@@ -511,7 +511,7 @@ def test_scenario_13_scale_throughput_benchmark(db_session):
         d_m = haversine_distance_m(lat0, lon0, lat_test, lon_test)
         is_viirs_match = d_m <= 750.0
 
-    elapsed = time.time() - start_time
+    elapsed = max(time.perf_counter() - start_time, 1e-6)
     rate = n_iterations / elapsed
     print(f"\n[BENCHMARK] Evaluated {n_iterations} spatiotemporal matching coordinates in {elapsed:.4f}s ({rate:.0f} matches/sec).")
     assert rate > 10000.0, f"Throughput too low: {rate:.0f} ops/sec"

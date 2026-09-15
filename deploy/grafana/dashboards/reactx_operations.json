@@ -1,0 +1,120 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "REACT-X Operational Overview & Ingestion Health",
+      "type": "row"
+    },
+    {
+      "id": 2,
+      "title": "NASA FIRMS Satellite Ingestion Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "rate(firms_events_persisted_total[5m])",
+          "legendFormat": "Events Persisted/sec"
+        },
+        {
+          "expr": "rate(firms_ingestion_failures_total[5m])",
+          "legendFormat": "Ingestion Failures/sec"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "API Request Throughput & Error Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[1m])) by (status_code)",
+          "legendFormat": "HTTP {{status_code}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "API Request Latency (P50, P95, P99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) * 1000",
+          "legendFormat": "P50 (ms)"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) * 1000",
+          "legendFormat": "P95 (ms)"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) * 1000",
+          "legendFormat": "P99 (ms)"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 5,
+      "title": "Core Intelligence, Telemetry & Subsystems",
+      "type": "row"
+    },
+    {
+      "id": 6,
+      "title": "ML Model Classification Rate by Class",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "sum(rate(ml_inference_total[5m])) by (predicted_class)",
+          "legendFormat": "{{predicted_class}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Active Industrial Telemetry Protocol Connections",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 10 },
+      "targets": [
+        {
+          "expr": "telemetry_active_connections",
+          "legendFormat": "{{protocol}}"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Database Availability State",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 10 },
+      "targets": [
+        {
+          "expr": "database_health_status",
+          "legendFormat": "DB Status (1=OK)"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["reactx", "production", "operations"],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "title": "REACT-X — Production Operations & Health",
+  "version": 1
+}

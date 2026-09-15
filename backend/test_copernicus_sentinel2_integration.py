@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.core.config import settings
 from app.services.satellite.copernicus_service import CopernicusDataSpaceService, copernicus_service
+from app.services.satellite.landsat_service import landsat_service
 from app.services.satellite.eo_verification_service import eo_verification_service
 from app.services.satellite.source_discrimination_service import source_discrimination_service
 from app.schemas.discrimination import (
@@ -84,7 +85,8 @@ def test_copernicus_cloud_cover_filtering():
 # 5. TEST SCENE UNAVAILABLE HANDLING (NO_SUITABLE_SCENE)
 def test_copernicus_scene_unavailable_handling():
     """Verify that empty scene returns NO_SUITABLE_SCENE / IMAGERY_UNAVAILABLE rather than fabricating."""
-    with patch.object(copernicus_service, "get_sentinel2_context_for_coordinates", return_value=None):
+    with patch.object(copernicus_service, "get_sentinel2_context_for_coordinates", return_value=None), \
+         patch.object(landsat_service, "get_landsat_context_for_coordinates", return_value=None):
         eo_res = eo_verification_service.verify_thermal_source(
             source_id="SRC-REMOTE-WILD",
             latitude=28.5000,
