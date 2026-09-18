@@ -495,31 +495,6 @@ class FIRMSService:
                         if bbox and not point_in_bbox(row.latitude, row.longitude, bbox):
                             continue
                         geom = row.geometry_geojson or {"type": "Point", "coordinates": [row.longitude, row.latitude]}
-                        results.append(CanonicalThermalEvent(
-                            event_id=row.event_id,
-                            dedup_key=row.dedup_key,
-                            source=row.source,
-                            source_satellite=row.source_satellite,
-                            sensor_name=row.sensor_name,
-                            source_version=row.source_version,
-                            acquisition_timestamp=row.acquisition_timestamp,
-                            latitude=row.latitude,
-                            longitude=row.longitude,
-                            frp_mw=row.frp_mw,
-                            brightness_temp_k=row.brightness_temp_k,
-                            brightness_temp_i4_k=row.brightness_temp_i4_k,
-                            confidence=row.confidence,
-                            confidence_pct=row.confidence_pct,
-                            day_night=row.day_night,
-                            scan=row.scan,
-                            track=row.track,
-                            ingested_at=row.ingested_at,
-                            is_live_data=row.is_live_data,
-                            data_quality_status=row.data_quality_status,
-                            data_quality_flags=row.data_quality_flags or [],
-                            processing_status=row.processing_status,
-                            h3_index=row.h3_index,
-                            geometry=geom,
                         cls_name = row.classification
                         cls_conf = row.classification_confidence
                         if not cls_name or cls_name == "UNCLASSIFIED":
@@ -579,7 +554,22 @@ class FIRMSService:
                 logger.warning(f"Database query failed, falling back to memory registry: {e}")
 
         # 2. In-Memory Registry Fallback
-        results = self._memory_events
+        results = []
+        for e in self._memory_events:
+            cls_name = e.classification
+            cls_conf = e.classification_confidence
+            if not cls_name or cls_name == "UNCLASSIFIED":
+                try:
+                    from app.services.ml.thermal_classifier_service import classifier_service
+                    cls_res = classifier_service.classify_event(e, db=db)
+                    cls_name = cls_res.predicted_class
+                    cls_conf = cls_res.model_confidence
+                except Exception:
+                    cls_name = "OTHER_UNKNOWN"
+                    cls_conf = 0.50
+                e.classification = cls_name
+                e.classification_confidence = cls_conf
+            results.append(e)
 
         if start_time:
             results = [e for e in results if e.acquisition_timestamp >= start_time]
@@ -602,7 +592,7 @@ class FIRMSService:
         if facility_id:
             results = [e for e in results if e.attributed_facility_id == facility_id]
         if only_abnormal:
-            results = [e for e in results if e.abnormality_score >= 50.0]
+            results = [e for e in results if (e.abnormality_score or 0.0) >= 50.0]
         if bbox:
             results = [e for e in results if point_in_bbox(e.latitude, e.longitude, bbox)]
 
@@ -617,30 +607,6 @@ class FIRMSService:
                 row = db.query(ThermalEventModel).filter(ThermalEventModel.event_id == event_id).first()
                 if row:
                     geom = row.geometry_geojson or {"type": "Point", "coordinates": [row.longitude, row.latitude]}
-                    return CanonicalThermalEvent(
-                        event_id=row.event_id,
-                        dedup_key=row.dedup_key,
-                        source=row.source,
-                        source_satellite=row.source_satellite,
-                        sensor_name=row.sensor_name,
-                        source_version=row.source_version,
-                        acquisition_timestamp=row.acquisition_timestamp,
-                        latitude=row.latitude,
-                        longitude=row.longitude,
-                        frp_mw=row.frp_mw,
-                        brightness_temp_k=row.brightness_temp_k,
-                        brightness_temp_i4_k=row.brightness_temp_i4_k,
-                        confidence=row.confidence,
-                        confidence_pct=row.confidence_pct,
-                        day_night=row.day_night,
-                        scan=row.scan,
-                        track=row.track,
-                        ingested_at=row.ingested_at,
-                        is_live_data=row.is_live_data,
-                        data_quality_status=row.data_quality_status,
-                        data_quality_flags=row.data_quality_flags or [],
-                        processing_status=row.processing_status,
-                        h3_index=row.h3_index,
                     cls_name = row.classification
                     cls_conf = row.classification_confidence
                     if not cls_name or cls_name == "UNCLASSIFIED":
@@ -696,6 +662,15 @@ class FIRMSService:
 
         for ev in self._memory_events:
             if ev.event_id == event_id:
+                if not ev.classification or ev.classification == "UNCLASSIFIED":
+                    try:
+                        from app.services.ml.thermal_classifier_service import classifier_service
+                        cls_res = classifier_service.classify_event(ev, db=db)
+                        ev.classification = cls_res.predicted_class
+                        ev.classification_confidence = cls_res.model_confidence
+                    except Exception:
+                        ev.classification = "OTHER_UNKNOWN"
+                        ev.classification_confidence = 0.50
                 return ev
         return None
 

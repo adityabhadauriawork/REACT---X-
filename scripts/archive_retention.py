@@ -34,7 +34,7 @@ def archive_and_purge_thermal_events(db, cutoff_date: datetime, archive_dir: Pat
     # Never archive events that are classified as industrial fires or tied to active assessments
     query = db.query(ThermalEventModel).filter(
         ThermalEventModel.acquisition_timestamp < cutoff_date,
-        ThermalEventModel.classification != "Industrial Fire"
+        ~ThermalEventModel.classification.in_(["INDUSTRIAL_FIRE", "Industrial Fire"])
     )
     
     count = query.count()
