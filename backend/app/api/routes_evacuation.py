@@ -16,7 +16,7 @@ class EvacAnalysisPayload:
 def calculate_safe_evacuation_route(
     simulation_result: HazardSimulationResult = Body(...),
     impact_result: ImpactAnalysisResult = Body(...),
-    origin_coords: Optional[List[float]] = None,
+    origin_coords: Optional[List[float]] = Body(None),
     origin_name: Optional[str] = None,
     db: Session = Depends(get_db)
 ):

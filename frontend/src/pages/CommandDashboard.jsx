@@ -156,17 +156,10 @@ export default function CommandDashboard({
   // Export PDF Handler
   const handleExportPDF = async () => {
     try {
-      const blob = await api.exportPrePlanPDF(selectedFacilityId, 'T-04', 'CH-NH3');
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `REACT-X_ERDMP_Plan_${selectedFacilityId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      await api.exportPrePlanPDF(selectedFacilityId, 'T-04', 'CHEM-NH3');
     } catch (e) {
-      console.warn('PDF export download fallback:', e);
-      window.open(`/api/preplan/export/pdf?facility_id=${selectedFacilityId}&asset_id=T-04`, '_blank');
+      console.warn('PDF export download error:', e);
+      alert(`PDF export failed: ${e.message || 'Please check backend service.'}`);
     }
   };
 

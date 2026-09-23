@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { 
   MapContainer, TileLayer, GeoJSON, Marker, 
-  Circle, Tooltip, useMap 
+  Circle, Tooltip, Polyline, useMap 
 } from 'react-leaflet';
 import L from 'leaflet';
 import { 
@@ -397,19 +397,69 @@ export default function CommandMapWorkspace({
           />
         )}
 
-        {/* 4. Evacuation Dynamic Routing Polylines */}
-        {layers.evacuationRoutes && evacuationPlan && evacuationPlan.routes && evacuationPlan.routes.map((route, idx) => (
-          <Polyline
-            key={`evac-route-${idx}`}
-            positions={route.path_coordinates || []}
-            pathOptions={{
-              color: '#16a34a',
-              weight: 4,
-              opacity: 0.9,
-              dashArray: '6, 6'
-            }}
-          />
-        ))}
+        {/* 4. Evacuation Dynamic Routing Polylines & Assembly Markers */}
+        {layers.evacuationRoutes && evacuationPlan && (
+          <>
+            {/* Primary Route */}
+            {evacuationPlan.primary_evacuation_route?.route_coordinates && evacuationPlan.primary_evacuation_route.route_coordinates.length > 0 && (
+              <>
+                <Polyline
+                  positions={evacuationPlan.primary_evacuation_route.route_coordinates}
+                  pathOptions={{
+                    color: '#16a34a',
+                    weight: 5,
+                    opacity: 0.95,
+                    dashArray: '8, 8'
+                  }}
+                />
+                {evacuationPlan.primary_evacuation_route.assembly_point_coords && (
+                  <Marker
+                    position={evacuationPlan.primary_evacuation_route.assembly_point_coords}
+                    icon={createDivIcon(
+                      `<div class="w-7 h-7 rounded-full bg-emerald-600 border-2 border-white flex items-center justify-center text-white text-xs shadow-lg font-bold">🟢</div>`,
+                      [28, 28]
+                    )}
+                  >
+                    <Tooltip direction="top" offset={[0, -14]} opacity={0.95} className="leaflet-light-tooltip">
+                      <div>
+                        <b className="text-emerald-700">Muster Staging Gate</b><br/>
+                        <span>{evacuationPlan.primary_evacuation_route.recommended_assembly_point_name || 'Designated Safe Gate'}</span><br/>
+                        <span className="text-slate-500 font-mono text-[10px]">Distance: {evacuationPlan.primary_evacuation_route.total_distance_m?.toFixed(0)}m</span>
+                      </div>
+                    </Tooltip>
+                  </Marker>
+                )}
+              </>
+            )}
+
+            {/* Candidate / Secondary Routes */}
+            {evacuationPlan.secondary_evacuation_route?.route_coordinates && (
+              <Polyline
+                positions={evacuationPlan.secondary_evacuation_route.route_coordinates}
+                pathOptions={{
+                  color: '#0284c7',
+                  weight: 3,
+                  opacity: 0.7,
+                  dashArray: '4, 6'
+                }}
+              />
+            )}
+
+            {/* Legacy array fallback */}
+            {Array.isArray(evacuationPlan.routes) && evacuationPlan.routes.map((route, idx) => (
+              <Polyline
+                key={`legacy-evac-route-${idx}`}
+                positions={route.path_coordinates || route.coordinates || []}
+                pathOptions={{
+                  color: '#16a34a',
+                  weight: 4,
+                  opacity: 0.9,
+                  dashArray: '6, 6'
+                }}
+              />
+            ))}
+          </>
+        )}
 
       </MapContainer>
     </div>

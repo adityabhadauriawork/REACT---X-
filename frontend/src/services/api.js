@@ -168,6 +168,7 @@ export const api = {
     a.click();
     a.remove();
     window.URL.revokeObjectURL(url);
+    return blob;
   },
 
   // 10. Intelligence Hub & Final Capabilities
