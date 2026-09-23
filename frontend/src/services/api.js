@@ -1204,6 +1204,130 @@ export const api = {
     const res = await fetch(`${API_BASE}/orchestration/scenarios/${encodeURIComponent(scenarioId)}?facility_id=${encodeURIComponent(facilityId)}`);
     if (!res.ok) throw new Error(`Failed to run scenario ${scenarioId}: ${res.statusText}`);
     return res.json();
+  },
+
+  // ==========================================
+  // ACTION HELPERS: EVACUATION & PREPLAN PDF
+  // ==========================================
+  async generateEvacuationRoute(facilityId = 'FAC-IN-DAHEJ-001', assetId = 'T-04', customOrigin = null) {
+    const simRes = await this.runSimulation({
+      facility_id: facilityId,
+      asset_id: assetId,
+      chemical_id: 'CHEM-NH3',
+      release_type: 'CONTINUOUS_TOXIC_PLUME',
+      release_rate_kg_s: 15.0,
+      release_duration_sec: 1800,
+      ambient_temperature_c: 32.0,
+      wind_speed_m_s: 2.2,
+      wind_direction_deg: 45.0,
+      atmospheric_stability: 'D'
+    });
+    const impactRes = await this.analyzeImpact(simRes, 120);
+    const originCoords = customOrigin || (simRes.source_coordinates || [21.6850, 72.5750]);
+    return await this.calculateEvacuationRoute(simRes, impactRes, originCoords, `Asset ${assetId} Staging`);
+  },
+
+  async exportPrePlanPDF(facilityId = 'FAC-IN-DAHEJ-001', assetId = 'T-04', chemicalId = 'CHEM-NH3') {
+    const cleanChemId = chemicalId.startsWith('CHEM-') ? chemicalId : `CHEM-${chemicalId.replace('CH-', '')}`;
+    const simRes = await this.runSimulation({
+      facility_id: facilityId,
+      asset_id: assetId,
+      chemical_id: cleanChemId,
+      release_type: 'CONTINUOUS_TOXIC_PLUME',
+      release_rate_kg_s: 15.0,
+      release_duration_sec: 1800,
+      ambient_temperature_c: 32.0,
+      wind_speed_m_s: 2.2,
+      wind_direction_deg: 45.0,
+      atmospheric_stability: 'D'
+    });
+    const impactRes = await this.analyzeImpact(simRes, 120);
+    const evacPlan = await this.calculateEvacuationRoute(simRes, impactRes, simRes.source_coordinates, `Asset ${assetId}`);
+    const resourcePlan = await this.optimizeResources(simRes, impactRes, evacPlan);
+    
+    return await this.downloadPrePlanPDF({
+      simulation_result: simRes,
+      impact_result: impactRes,
+      evacuation_plan: evacPlan,
+      resource_plan: resourcePlan,
+      author_name: 'REACT-X National Industrial Safety Engine',
+      facility_ref: `${facilityId} Emergency Response Plan`
+    });
+  },
+
+  // ==========================================
+  // DATA GATEWAY & DEMO REPLAY SUBSYSTEM
+  // ==========================================
+  async getDataGatewayStatus() {
+    const res = await fetch(`${API_BASE}/data-gateway/status`);
+    if (!res.ok) throw new Error(`Failed to load Data Gateway status: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getDataGatewaySources() {
+    const res = await fetch(`${API_BASE}/data-gateway/sources`);
+    if (!res.ok) throw new Error(`Failed to load Data Gateway sources: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getDataGatewayCatalog() {
+    const res = await fetch(`${API_BASE}/data-gateway/catalog`);
+    if (!res.ok) throw new Error(`Failed to load Data Gateway catalog: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getDataGatewayQuality() {
+    const res = await fetch(`${API_BASE}/data-gateway/quality`);
+    if (!res.ok) throw new Error(`Failed to load Data Gateway quality: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getDemoScenarios() {
+    const res = await fetch(`${API_BASE}/data-gateway/demo/scenarios`);
+    if (!res.ok) throw new Error(`Failed to load demo scenarios: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getDemoState() {
+    const res = await fetch(`${API_BASE}/data-gateway/demo/state`);
+    if (!res.ok) throw new Error(`Failed to load demo replay state: ${res.statusText}`);
+    return res.json();
+  },
+
+  async startDemoReplay(scenarioId = 'SCENARIO-DAHEJ-AMMONIA-CRYO-01', speed = 1.0) {
+    const res = await fetch(`${API_BASE}/data-gateway/demo/start?scenario_id=${encodeURIComponent(scenarioId)}&speed=${speed}`, {
+      method: 'POST'
+    });
+    if (!res.ok) throw new Error(`Failed to start demo replay: ${res.statusText}`);
+    return res.json();
+  },
+
+  async pauseDemoReplay() {
+    const res = await fetch(`${API_BASE}/data-gateway/demo/pause`, { method: 'POST' });
+    if (!res.ok) throw new Error(`Failed to pause demo replay: ${res.statusText}`);
+    return res.json();
+  },
+
+  async resetDemoReplay() {
+    const res = await fetch(`${API_BASE}/data-gateway/demo/reset`, { method: 'POST' });
+    if (!res.ok) throw new Error(`Failed to reset demo replay: ${res.statusText}`);
+    return res.json();
+  },
+
+  async stepDemoReplay() {
+    const res = await fetch(`${API_BASE}/data-gateway/demo/step`, { method: 'POST' });
+    if (!res.ok) throw new Error(`Failed to advance demo step: ${res.statusText}`);
+    return res.json();
+  },
+
+  async injectDemoFailure(failureFlags) {
+    const res = await fetch(`${API_BASE}/data-gateway/demo/failure-injection`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(failureFlags)
+    });
+    if (!res.ok) throw new Error(`Failed to inject failure flags: ${res.statusText}`);
+    return res.json();
   }
 };
 

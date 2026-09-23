@@ -283,4 +283,24 @@ class IndustrialContextService:
             "total_registered_facilities": db.query(IndustrialFacilityModel).count()
         }
 
+    def get_all_facilities(self, db: Session) -> List[IndustrialFacilityModel]:
+        """Returns all registered industrial facilities."""
+        return db.query(IndustrialFacilityModel).all()
+
+    def find_nearest_facility(self, lat: float, lon: float, db: Optional[Session] = None) -> Optional[IndustrialFacilityModel]:
+        """Finds nearest industrial facility within 50km radius."""
+        if db is None:
+            return None
+        facs = db.query(IndustrialFacilityModel).all()
+        if not facs:
+            return None
+        best = None
+        min_d = float('inf')
+        for f in facs:
+            d = self.haversine_distance_m(lat, lon, f.latitude, f.longitude)
+            if d < min_d:
+                min_d = d
+                best = f
+        return best if min_d <= 50000.0 else None
+
 industrial_context_service = IndustrialContextService()

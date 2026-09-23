@@ -36,6 +36,7 @@ from app.api.routes_adaptive import router as adaptive_router
 from app.api.routes_discrimination import router as discrimination_router
 from app.api.routes_national import router as national_router
 from app.api.routes_orchestration import router as orchestration_router
+from app.api.routes_data_gateway import router as data_gateway_router
 from app.services.storage.repository import storage_repository
 from app.services.satellite.industrial_context_service import industrial_context_service
 from app.services.satellite.fingerprint_engine import fingerprint_engine
@@ -125,6 +126,7 @@ app.include_router(adaptive_router, prefix=settings.API_V1_STR)
 app.include_router(discrimination_router, prefix=settings.API_V1_STR)
 app.include_router(national_router, prefix=settings.API_V1_STR)
 app.include_router(orchestration_router, prefix=settings.API_V1_STR)
+app.include_router(data_gateway_router, prefix=settings.API_V1_STR)
 
 # Prometheus Operational Metrics Exporter
 @app.get("/metrics", tags=["Observability"])

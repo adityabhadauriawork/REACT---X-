@@ -12,7 +12,8 @@ export default function CommandDashboard({
   user,
   currentRole,
   onRoleChange,
-  onLogout
+  onLogout,
+  onSwitchToDemo
 }) {
   const [siteData, setSiteData] = useState(null);
   const [chemicals, setChemicals] = useState([]);
@@ -206,6 +207,7 @@ export default function CommandDashboard({
         onSearchSelect={handleSearchSelect}
         onLogout={onLogout}
         onOpenExecutiveBrief={() => setShowExecutiveBrief(true)}
+        onSwitchToDemo={onSwitchToDemo}
         liveTelemetry={liveTelemetry}
       />
 
