@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Response, Depends
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
@@ -88,14 +89,28 @@ app.add_middleware(CorrelationIdMiddleware)
 # Prometheus operational metrics tracking (measures latency & request counts)
 app.add_middleware(PrometheusMetricsMiddleware)
 
-# CORS configuration — origins are environment-configurable (default: localhost dev origins)
+# CORS configuration — origins are environment-configurable with regex for all Vercel deployments
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Global unhandled exception handler to ensure CORS headers and structured error responses
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc: Exception):
+    import traceback
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": str(exc) or "Internal Server Error",
+            "error_type": exc.__class__.__name__
+        }
+    )
 
 # Mount API routers
 app.include_router(health_router, prefix=settings.API_V1_STR)

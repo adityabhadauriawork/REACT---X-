@@ -71,8 +71,11 @@ export default function DemoCommandRoom({ onSwitchToIndiaOps, onLogout, user }) 
     try {
       const st = await api.startDemoReplay(selectedScenarioId, speed);
       setReplayState(st);
+      setActionNotice(null);
     } catch (e) {
-      console.warn('Start replay error:', e);
+      console.error('Start replay error:', e);
+      setReplayState(prev => ({ ...prev, status: 'ERROR' }));
+      setActionNotice({ type: 'error', msg: `Failed to start replay: ${e.message || 'Server error'}` });
     }
   };
 
@@ -82,6 +85,7 @@ export default function DemoCommandRoom({ onSwitchToIndiaOps, onLogout, user }) 
       setReplayState(st);
     } catch (e) {
       console.warn('Pause replay error:', e);
+      setReplayState(prev => ({ ...prev, status: 'PAUSED' }));
     }
   };
 
@@ -99,6 +103,14 @@ export default function DemoCommandRoom({ onSwitchToIndiaOps, onLogout, user }) 
       setActionNotice(null);
     } catch (e) {
       console.warn('Reset replay error:', e);
+      setReplayState({
+        status: 'IDLE',
+        current_step: 0,
+        total_steps: 5,
+        replay_speed: 1.0,
+        active_failure_injections: {}
+      });
+      setActionNotice(null);
     }
   };
 
@@ -108,8 +120,17 @@ export default function DemoCommandRoom({ onSwitchToIndiaOps, onLogout, user }) 
     try {
       const st = await api.stepDemoReplay();
       setReplayState(st);
+      if (actionNotice?.type === 'error') {
+        setActionNotice(null);
+      }
     } catch (e) {
-      console.warn('Step replay error:', e);
+      console.error('Step replay error:', e);
+      // Halt replay immediately on failure to prevent repeated hammering
+      setReplayState(prev => ({ ...prev, status: 'ERROR' }));
+      setActionNotice({ 
+        type: 'error', 
+        msg: `Replay step failed: ${e.message || 'Network/Server Error'}. Auto-replay paused.` 
+      });
     } finally {
       setIsProcessingStep(false);
     }

@@ -4,7 +4,22 @@ from typing import List
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = BASE_DIR.parent / "data"
+
+# Automatically locate seed_data.json across local, Docker, and Render container layouts
+def _find_seed_data_path() -> Path:
+    candidates = [
+        BASE_DIR / "data" / "seed_data.json",
+        BASE_DIR / "app" / "data" / "seed_data.json",
+        BASE_DIR.parent / "data" / "seed_data.json",
+        Path.cwd() / "data" / "seed_data.json",
+        Path.cwd() / "backend" / "data" / "seed_data.json",
+        Path("/app/data/seed_data.json"),
+        Path("/app/app/data/seed_data.json")
+    ]
+    for c in candidates:
+        if c.exists():
+            return c
+    return BASE_DIR / "data" / "seed_data.json"
 
 # Automatically load environment variables from .env files
 load_dotenv(BASE_DIR / ".env")
@@ -17,7 +32,7 @@ class Settings:
     SYSTEM_VERSION: str = "2.0.0-rc1"
     API_V1_STR: str = "/api"
     DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR}/sih1505.db")
-    SEED_DATA_PATH: Path = DATA_DIR / "seed_data.json"
+    SEED_DATA_PATH: Path = _find_seed_data_path()
 
     # NASA FIRMS API Credentials & Configuration
     NASA_FIRMS_MAP_KEY: str = os.getenv("NASA_FIRMS_MAP_KEY", os.getenv("NASA_FIRMS_API_KEY", ""))
@@ -106,7 +121,7 @@ class Settings:
     CORS_ORIGINS: list = [
         o.strip() for o in os.getenv(
             "CORS_ORIGINS",
-            "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"
+            "https://react-x-rho.vercel.app,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"
         ).split(",") if o.strip()
     ]
 

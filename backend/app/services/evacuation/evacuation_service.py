@@ -58,29 +58,37 @@ class EvacuationService:
         assembly_points = db.query(AssemblyPointModel).all()
         gates = db.query(GateModel).all()
 
-        blocked_road_ids = {br.id for br in impact_result.blocked_roads}
-        safe_ap_ids = {ap.id for ap in impact_result.assembly_points if ap.status == "SAFE"}
+        if not roads or not assembly_points or not gates:
+            from app.services.site.site_service import site_service
+            site_service.load_seed_data_if_empty(db)
+            roads = db.query(RoadModel).all()
+            assembly_points = db.query(AssemblyPointModel).all()
+            gates = db.query(GateModel).all()
+
+        blocked_road_ids = {br.id for br in impact_result.blocked_roads} if impact_result and impact_result.blocked_roads else set()
+        safe_ap_ids = {ap.id for ap in impact_result.assembly_points if ap.status == "SAFE"} if impact_result and impact_result.assembly_points else set()
 
         # Extract hazard polygons for spatial intersection checks
-        hazard_step = simulation_result.time_steps[-1]
+        hazard_step = simulation_result.time_steps[-1] if simulation_result.time_steps else None
         red_poly = None
         orange_poly = None
         yellow_poly = None
 
-        for feat in hazard_step.geojson.get("features", []):
-            zid = feat["properties"].get("zone_id")
-            if zid == "RED_ZONE_LETHAL":
-                red_poly = shape(feat["geometry"])
-            elif zid == "ORANGE_ZONE_INJURY":
-                orange_poly = shape(feat["geometry"])
-            elif zid == "YELLOW_ZONE_CAUTION":
-                yellow_poly = shape(feat["geometry"])
+        if hazard_step and hazard_step.geojson:
+            for feat in hazard_step.geojson.get("features", []):
+                zid = feat["properties"].get("zone_id")
+                if zid == "RED_ZONE_LETHAL":
+                    red_poly = shape(feat["geometry"])
+                elif zid == "ORANGE_ZONE_INJURY":
+                    orange_poly = shape(feat["geometry"])
+                elif zid == "YELLOW_ZONE_CAUTION":
+                    yellow_poly = shape(feat["geometry"])
 
         # Determine Plume Travel Direction
         # Wind direction is where wind comes from; plume travels downwind = (wind_deg + 180) % 360
         wind_from_deg = simulation_result.wind_direction_deg
         plume_travel_deg = (wind_from_deg + 180.0) % 360.0
-        src_coords = simulation_result.source_coordinates
+        src_coords = simulation_result.source_coordinates or [21.6850, 72.5750]
 
         if not origin_coords:
             origin_coords = src_coords
@@ -95,6 +103,8 @@ class EvacuationService:
 
         for r in roads:
             coords = r.coordinates_json
+            if not coords or len(coords) < 2:
+                continue
             from_node = r.from_node
             to_node = r.to_node
             node_coords[from_node] = coords[0]
@@ -137,6 +147,17 @@ class EvacuationService:
             G_all.add_edge(from_node, to_node, **edge_attr)
             if is_passable:
                 G_safe.add_edge(from_node, to_node, **edge_attr)
+
+        # Fallback synthesis if roads / node_coords is empty
+        if not node_coords:
+            node_coords["N-01"] = [src_coords[0] + 0.003, src_coords[1] - 0.004]
+            node_coords["N-02"] = [src_coords[0] + 0.003, src_coords[1] + 0.004]
+            node_coords["N-03"] = [src_coords[0] - 0.003, src_coords[1] - 0.004]
+            node_coords["N-04"] = [src_coords[0] - 0.003, src_coords[1] + 0.004]
+            G_all.add_edge("N-01", "N-02", weight=700.0, actual_length=700.0, passable=True, status="CLEAR")
+            G_all.add_edge("N-03", "N-04", weight=700.0, actual_length=700.0, passable=True, status="CLEAR")
+            G_safe.add_edge("N-01", "N-02", weight=700.0, actual_length=700.0, passable=True, status="CLEAR")
+            G_safe.add_edge("N-03", "N-04", weight=700.0, actual_length=700.0, passable=True, status="CLEAR")
 
         # 2. Find Closest Accessible Node to Origin
         closest_origin_node = min(

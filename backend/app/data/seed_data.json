@@ -1,0 +1,773 @@
+{
+  "plant": {
+    "id": "PLANT-01",
+    "name": "PetroChem Complex Alpha - Unit 04",
+    "industry_type": "Petrochemical & Bulk Chemical Manufacturing",
+    "location": "Dahej Petrochemical Industrial Zone, Gujarat, India",
+    "center": [21.6850, 72.5750],
+    "bounds": [
+      [21.6800, 72.5680],
+      [21.6900, 72.5680],
+      [21.6900, 72.5820],
+      [21.6800, 72.5820],
+      [21.6800, 72.5680]
+    ],
+    "risk_level": "Major Accident Hazard (MAH) - Tier 1",
+    "erdmp_license": "PESO/IND/2024/MAH-1505"
+  },
+  "chemicals": [
+    {
+      "id": "CHEM-NH3",
+      "name": "Ammonia (Anhydrous)",
+      "formula": "NH3",
+      "cas_number": "7664-41-7",
+      "molecular_weight": 17.03,
+      "boiling_point_c": -33.34,
+      "flash_point_c": null,
+      "lfl_percent": 15.0,
+      "ufl_percent": 28.0,
+      "vapor_density_rel_air": 0.59,
+      "liquid_density_kg_m3": 682.0,
+      "hazard_category": "Toxic Inhalation Hazard (TIH) / Corrosive / Flammable Gas",
+      "erpg_1_ppm": 25.0,
+      "erpg_2_ppm": 150.0,
+      "erpg_3_ppm": 750.0,
+      "idlh_ppm": 300.0,
+      "color_code": "#e11d48",
+      "description": "Pungent, suffocating toxic gas. Liquefied under pressure. Forms dense cold vapor cloud with atmospheric moisture upon release.",
+      "tactical_guidance": "Deploy high-volume water curtain/fog to knock down vapor. Do NOT direct water jet into liquid pool. Level A Hazmat suits required."
+    },
+    {
+      "id": "CHEM-LPG",
+      "name": "Liquefied Petroleum Gas (LPG - Propane/Butane)",
+      "formula": "C3H8 / C4H10",
+      "cas_number": "68476-85-7",
+      "molecular_weight": 44.10,
+      "boiling_point_c": -42.10,
+      "flash_point_c": -104.0,
+      "lfl_percent": 2.1,
+      "ufl_percent": 9.5,
+      "vapor_density_rel_air": 1.55,
+      "liquid_density_kg_m3": 510.0,
+      "hazard_category": "Extremely Flammable Gas / BLEVE Risk / Vapor Cloud Explosion",
+      "erpg_1_ppm": 1000.0,
+      "erpg_2_ppm": 5000.0,
+      "erpg_3_ppm": 10000.0,
+      "idlh_ppm": 2000.0,
+      "color_code": "#f97316",
+      "description": "Heavier-than-air hydrocarbon gas. Rapidly accumulates in low-lying trenches and sewers. Catastrophic BLEVE potential on vessel heating.",
+      "tactical_guidance": "Cool exposed vessel shells with deluge sprays at min 10.2 L/min/m2. Apply AFFF foam blanket. Eliminate all ignition sources."
+    },
+    {
+      "id": "CHEM-CL2",
+      "name": "Chlorine (Liquefied)",
+      "formula": "Cl2",
+      "cas_number": "7782-50-5",
+      "molecular_weight": 70.90,
+      "boiling_point_c": -34.04,
+      "flash_point_c": null,
+      "lfl_percent": null,
+      "ufl_percent": null,
+      "vapor_density_rel_air": 2.49,
+      "liquid_density_kg_m3": 1468.0,
+      "hazard_category": "Severe Toxic Inhalation Hazard (TIH) / Strong Oxidizer",
+      "erpg_1_ppm": 1.0,
+      "erpg_2_ppm": 3.0,
+      "erpg_3_ppm": 20.0,
+      "idlh_ppm": 10.0,
+      "color_code": "#a855f7",
+      "description": "Greenish-yellow dense suffocating gas. Hugs ground contour. Causes severe pulmonary edema and fatal chemical pneumonitis.",
+      "tactical_guidance": "Deploy caustic soda neutralizing water fog. Evacuate crosswind and upwind. SCBA and Level A encapsulating suits mandatory."
+    },
+    {
+      "id": "CHEM-H2S",
+      "name": "Hydrogen Sulfide (Acid Gas)",
+      "formula": "H2S",
+      "cas_number": "7783-06-4",
+      "molecular_weight": 34.08,
+      "boiling_point_c": -60.28,
+      "flash_point_c": -60.0,
+      "lfl_percent": 4.0,
+      "ufl_percent": 44.0,
+      "vapor_density_rel_air": 1.19,
+      "liquid_density_kg_m3": 993.0,
+      "hazard_category": "Extremely Toxic / Flammable Gas / Rapid Olfactory Paralysis",
+      "erpg_1_ppm": 0.1,
+      "erpg_2_ppm": 30.0,
+      "erpg_3_ppm": 100.0,
+      "idlh_ppm": 100.0,
+      "color_code": "#ec4899",
+      "description": "Rotten-egg odor at low ppm; rapidly deadens sense of smell at >50 ppm giving false sense of safety. Fatal within minutes at >500 ppm.",
+      "tactical_guidance": "Gas flare divert or alkaline scrubber absorption. Positive pressure SCBA only. Standoff radius minimum 300 meters."
+    },
+    {
+      "id": "CHEM-C6H6",
+      "name": "Benzene (Pure Grade)",
+      "formula": "C6H6",
+      "cas_number": "71-43-2",
+      "molecular_weight": 78.11,
+      "boiling_point_c": 80.1,
+      "flash_point_c": -11.1,
+      "lfl_percent": 1.2,
+      "ufl_percent": 7.8,
+      "vapor_density_rel_air": 2.77,
+      "liquid_density_kg_m3": 876.0,
+      "hazard_category": "Class 1A Known Carcinogen / Flammable Liquid / Toxic Vapor",
+      "erpg_1_ppm": 50.0,
+      "erpg_2_ppm": 150.0,
+      "erpg_3_ppm": 1000.0,
+      "idlh_ppm": 500.0,
+      "color_code": "#eab308",
+      "description": "Colorless, highly volatile aromatic liquid with sweet aroma. Vapors form explosive mixtures with air and travel long distances to ignition sources.",
+      "tactical_guidance": "Apply alcohol-resistant AFFF foam. Prevent runoff into industrial effluent streams. Chemical splash suit with organic vapor cartridges."
+    }
+  ],
+  "assets": [
+    {
+      "id": "T-01",
+      "name": "Benzene Storage Tank 01",
+      "type": "STORAGE_TANK",
+      "sector": "Sector A - Liquid Hydrocarbons",
+      "coordinates": [21.6865, 72.5710],
+      "chemical_id": "CHEM-C6H6",
+      "capacity_m3": 15000,
+      "current_fill_pct": 78.5,
+      "operating_pressure_bar": 1.2,
+      "operating_temp_c": 28.0,
+      "criticality": "HIGH",
+      "status": "OPERATIONAL",
+      "fire_protection": "Deluge foam chamber, water spray ring, rim-seal gas detection"
+    },
+    {
+      "id": "T-02",
+      "name": "Chlorine Pressurized Bullet Tank",
+      "type": "STORAGE_TANK",
+      "sector": "Sector B - Hazardous Inorganics",
+      "coordinates": [21.6875, 72.5730],
+      "chemical_id": "CHEM-CL2",
+      "capacity_m3": 500,
+      "current_fill_pct": 65.0,
+      "operating_pressure_bar": 7.5,
+      "operating_temp_c": 22.0,
+      "criticality": "CRITICAL",
+      "status": "OPERATIONAL",
+      "fire_protection": "Emergency caustic scrubber tie-in, optical chlorine detector array"
+    },
+    {
+      "id": "T-03",
+      "name": "LPG Horton Sphere 01",
+      "type": "STORAGE_TANK",
+      "sector": "Sector C - Pressurized Gas Farm",
+      "coordinates": [21.6840, 72.5720],
+      "chemical_id": "CHEM-LPG",
+      "capacity_m3": 2500,
+      "current_fill_pct": 82.0,
+      "operating_pressure_bar": 12.0,
+      "operating_temp_c": 25.0,
+      "criticality": "CRITICAL",
+      "status": "OPERATIONAL",
+      "fire_protection": "Medium-velocity water spray system (10.2 L/min/m2), depressurization flare line"
+    },
+    {
+      "id": "T-04",
+      "name": "Ammonia Cryogenic Storage Tank",
+      "type": "STORAGE_TANK",
+      "sector": "Sector D - Cryogenic Chemical Yard",
+      "coordinates": [21.6855, 72.5745],
+      "chemical_id": "CHEM-NH3",
+      "capacity_m3": 10000,
+      "current_fill_pct": 74.0,
+      "operating_pressure_bar": 4.5,
+      "operating_temp_c": -33.0,
+      "criticality": "CRITICAL",
+      "status": "OPERATIONAL",
+      "fire_protection": "Automatic high-expansion water curtains, catalytic ammonia flares, gas sniffers"
+    },
+    {
+      "id": "T-05",
+      "name": "LPG Horton Sphere 02",
+      "type": "STORAGE_TANK",
+      "sector": "Sector C - Pressurized Gas Farm",
+      "coordinates": [21.6835, 72.5735],
+      "chemical_id": "CHEM-LPG",
+      "capacity_m3": 2500,
+      "current_fill_pct": 58.0,
+      "operating_pressure_bar": 11.5,
+      "operating_temp_c": 24.5,
+      "criticality": "CRITICAL",
+      "status": "OPERATIONAL",
+      "fire_protection": "Water deluge cooling ring, remote emergency shut-off valves (ROSOV)"
+    },
+    {
+      "id": "T-06",
+      "name": "H2S Acid Gas Scrubber Column & Buffer",
+      "type": "STORAGE_TANK",
+      "sector": "Sector B - Hazardous Inorganics",
+      "coordinates": [21.6860, 72.5770],
+      "chemical_id": "CHEM-H2S",
+      "capacity_m3": 800,
+      "current_fill_pct": 45.0,
+      "operating_pressure_bar": 3.8,
+      "operating_temp_c": 40.0,
+      "criticality": "HIGH",
+      "status": "OPERATIONAL",
+      "fire_protection": "Alkaline neutralizing spray, dual flare header connection"
+    },
+    {
+      "id": "T-07",
+      "name": "Diesel Auxiliary Reservoir & Pump Tank",
+      "type": "STORAGE_TANK",
+      "sector": "Sector E - Utilities & Energy",
+      "coordinates": [21.6815, 72.5700],
+      "chemical_id": null,
+      "capacity_m3": 5000,
+      "current_fill_pct": 90.0,
+      "operating_pressure_bar": 1.0,
+      "operating_temp_c": 30.0,
+      "criticality": "MEDIUM",
+      "status": "OPERATIONAL",
+      "fire_protection": "Foam pourers, bund wall spill containment"
+    },
+    {
+      "id": "T-08",
+      "name": "Liquid Nitrogen Inerting Vessel",
+      "type": "STORAGE_TANK",
+      "sector": "Sector E - Utilities & Energy",
+      "coordinates": [21.6880, 72.5760],
+      "chemical_id": null,
+      "capacity_m3": 1200,
+      "current_fill_pct": 80.0,
+      "operating_pressure_bar": 6.0,
+      "operating_temp_c": -196.0,
+      "criticality": "LOW",
+      "status": "OPERATIONAL",
+      "fire_protection": "Pressure relief valves, vacuum insulation"
+    },
+    {
+      "id": "PU-01",
+      "name": "Primary Catalytic Reformer Unit",
+      "type": "PROCESS_UNIT",
+      "sector": "Sector A - Liquid Hydrocarbons",
+      "coordinates": [21.6860, 72.5730],
+      "chemical_id": "CHEM-C6H6",
+      "capacity_m3": null,
+      "current_fill_pct": null,
+      "operating_pressure_bar": 28.0,
+      "operating_temp_c": 480.0,
+      "criticality": "CRITICAL",
+      "status": "OPERATIONAL",
+      "fire_protection": "Steam purge ring, automatic ESD loop, high-density water spray"
+    },
+    {
+      "id": "PU-02",
+      "name": "Ammonia Synthesis & Compression Loop",
+      "type": "PROCESS_UNIT",
+      "sector": "Sector D - Cryogenic Chemical Yard",
+      "coordinates": [21.6850, 72.5760],
+      "chemical_id": "CHEM-NH3",
+      "capacity_m3": null,
+      "current_fill_pct": null,
+      "operating_pressure_bar": 150.0,
+      "operating_temp_c": 420.0,
+      "criticality": "CRITICAL",
+      "status": "OPERATIONAL",
+      "fire_protection": "Blast containment wall, automatic depressurization to relief header"
+    },
+    {
+      "id": "PU-03",
+      "name": "Gas Desulfurization & Claus Recovery Unit",
+      "type": "PROCESS_UNIT",
+      "sector": "Sector B - Hazardous Inorganics",
+      "coordinates": [21.6840, 72.5775],
+      "chemical_id": "CHEM-H2S",
+      "capacity_m3": null,
+      "current_fill_pct": null,
+      "operating_pressure_bar": 18.0,
+      "operating_temp_c": 280.0,
+      "criticality": "HIGH",
+      "status": "OPERATIONAL",
+      "fire_protection": "Thermal incinerator interlock, multi-point toxic gas detection"
+    },
+    {
+      "id": "CR-01",
+      "name": "Central Blast-Resistant Command & Control Room",
+      "type": "CONTROL_ROOM",
+      "sector": "Sector C - Plant Command & Operations",
+      "coordinates": [21.6825, 72.5750],
+      "chemical_id": null,
+      "capacity_m3": null,
+      "current_fill_pct": null,
+      "operating_pressure_bar": 1.0,
+      "operating_temp_c": 22.0,
+      "criticality": "CRITICAL",
+      "status": "OPERATIONAL",
+      "fire_protection": "Overpressure HVAC filtration (positive pressure), Clean Agent FM-200 suppression"
+    },
+    {
+      "id": "ADM-01",
+      "name": "Administration & HSE Training Complex",
+      "type": "BUILDING",
+      "sector": "Sector C - Plant Command & Operations",
+      "coordinates": [21.6815, 72.5775],
+      "chemical_id": null,
+      "capacity_m3": null,
+      "current_fill_pct": null,
+      "operating_pressure_bar": 1.0,
+      "operating_temp_c": 24.0,
+      "criticality": "MEDIUM",
+      "status": "OPERATIONAL",
+      "fire_protection": "Sprinkler network, fire alarm call points, emergency PA system"
+    },
+    {
+      "id": "FS-01",
+      "name": "On-Site Industrial Fire & Hazmat Station",
+      "type": "FIRE_STATION",
+      "sector": "Sector E - Emergency Response",
+      "coordinates": [21.6820, 72.5715],
+      "chemical_id": null,
+      "capacity_m3": null,
+      "current_fill_pct": null,
+      "operating_pressure_bar": 1.0,
+      "operating_temp_c": 26.0,
+      "criticality": "HIGH",
+      "status": "OPERATIONAL",
+      "fire_protection": "Direct dedicated fire hydrants, SCBA refill station, emergency sirens"
+    },
+    {
+      "id": "MED-01",
+      "name": "Occupational Health Center & Triage Facility",
+      "type": "MEDICAL",
+      "sector": "Sector E - Emergency Response",
+      "coordinates": [21.6810, 72.5755],
+      "chemical_id": null,
+      "capacity_m3": null,
+      "current_fill_pct": null,
+      "operating_pressure_bar": 1.0,
+      "operating_temp_c": 22.0,
+      "criticality": "HIGH",
+      "status": "OPERATIONAL",
+      "fire_protection": "Decontamination shower bay, positive pressure oxygenation suite"
+    },
+    {
+      "id": "SUB-01",
+      "name": "66kV Main High-Voltage Substation",
+      "type": "UTILITY",
+      "sector": "Sector E - Utilities & Energy",
+      "coordinates": [21.6885, 72.5705],
+      "chemical_id": null,
+      "capacity_m3": null,
+      "current_fill_pct": null,
+      "operating_pressure_bar": 1.0,
+      "operating_temp_c": 28.0,
+      "criticality": "HIGH",
+      "status": "OPERATIONAL",
+      "fire_protection": "CO2 total flooding for transformer bays, nitrogen purging"
+    }
+  ],
+  "pipelines": [
+    {
+      "id": "PL-101",
+      "name": "Ammonia High-Pressure Header",
+      "chemical_id": "CHEM-NH3",
+      "operating_pressure_bar": 16.0,
+      "diameter_mm": 250,
+      "coordinates": [
+        [21.6855, 72.5745],
+        [21.6852, 72.5752],
+        [21.6850, 72.5760]
+      ],
+      "status": "OPERATIONAL"
+    },
+    {
+      "id": "PL-202",
+      "name": "LPG Subsurface Transfer Pipeline",
+      "chemical_id": "CHEM-LPG",
+      "operating_pressure_bar": 14.0,
+      "diameter_mm": 300,
+      "coordinates": [
+        [21.6840, 72.5720],
+        [21.6850, 72.5725],
+        [21.6860, 72.5730]
+      ],
+      "status": "OPERATIONAL"
+    },
+    {
+      "id": "PL-303",
+      "name": "Chlorine Transfer Corridor",
+      "chemical_id": "CHEM-CL2",
+      "operating_pressure_bar": 8.0,
+      "diameter_mm": 150,
+      "coordinates": [
+        [21.6875, 72.5730],
+        [21.6870, 72.5750],
+        [21.6860, 72.5770]
+      ],
+      "status": "OPERATIONAL"
+    }
+  ],
+  "assembly_points": [
+    {
+      "id": "AP-1",
+      "name": "Assembly Point 1 - North Green Zone",
+      "coordinates": [21.6890, 72.5795],
+      "capacity": 120,
+      "current_occupancy": 0,
+      "status": "SAFE",
+      "equipment": "First aid station, emergency satellite phone, mega-siren"
+    },
+    {
+      "id": "AP-2",
+      "name": "Assembly Point 2 - South Main Ground",
+      "coordinates": [21.6808, 72.5710],
+      "capacity": 200,
+      "current_occupancy": 0,
+      "status": "SAFE",
+      "equipment": "Triage tent, water reservoir, PPE distribution lockbox"
+    },
+    {
+      "id": "AP-3",
+      "name": "Assembly Point 3 - West Perimeter Zone",
+      "coordinates": [21.6850, 72.5690],
+      "capacity": 80,
+      "current_occupancy": 0,
+      "status": "SAFE",
+      "equipment": "Emergency beacon, solar radio link, mobile stretcher set"
+    },
+    {
+      "id": "AP-4",
+      "name": "Assembly Point 4 - East Outer Staging Area",
+      "coordinates": [21.6830, 72.5805],
+      "capacity": 150,
+      "current_occupancy": 0,
+      "status": "SAFE",
+      "equipment": "Ambulance docking bay, communication van connection"
+    }
+  ],
+  "gates": [
+    {
+      "id": "GATE-1",
+      "name": "Gate 1 - North Administrative & Heavy Vehicle Gate",
+      "coordinates": [21.6895, 72.5750],
+      "status": "OPEN",
+      "type": "PRIMARY_GATE"
+    },
+    {
+      "id": "GATE-2",
+      "name": "Gate 2 - South Commercial & Tanker Logistics Gate",
+      "coordinates": [21.6805, 72.5730],
+      "status": "OPEN",
+      "type": "SECONDARY_GATE"
+    },
+    {
+      "id": "GATE-3",
+      "name": "Gate 3 - East Dedicated Emergency Response Gate",
+      "coordinates": [21.6850, 72.5815],
+      "status": "OPEN",
+      "type": "EMERGENCY_GATE"
+    }
+  ],
+  "roads": [
+    {
+      "id": "RD-01",
+      "name": "Perimeter Ring Road - West",
+      "from_node": "N-SW",
+      "to_node": "N-NW",
+      "coordinates": [
+        [21.6808, 72.5690],
+        [21.6850, 72.5690],
+        [21.6890, 72.5690]
+      ],
+      "width_m": 8.0,
+      "surface": "Asphalt Heavy-Duty",
+      "accessibility": true,
+      "status": "OPEN"
+    },
+    {
+      "id": "RD-02",
+      "name": "Perimeter Ring Road - North",
+      "from_node": "N-NW",
+      "to_node": "N-NE",
+      "coordinates": [
+        [21.6890, 72.5690],
+        [21.6895, 72.5750],
+        [21.6890, 72.5805]
+      ],
+      "width_m": 10.0,
+      "surface": "Asphalt Heavy-Duty",
+      "accessibility": true,
+      "status": "OPEN"
+    },
+    {
+      "id": "RD-03",
+      "name": "Perimeter Ring Road - East",
+      "from_node": "N-NE",
+      "to_node": "N-SE",
+      "coordinates": [
+        [21.6890, 72.5805],
+        [21.6850, 72.5805],
+        [21.6815, 72.5805]
+      ],
+      "width_m": 8.0,
+      "surface": "Asphalt Heavy-Duty",
+      "accessibility": true,
+      "status": "OPEN"
+    },
+    {
+      "id": "RD-04",
+      "name": "Perimeter Ring Road - South",
+      "from_node": "N-SE",
+      "to_node": "N-SW",
+      "coordinates": [
+        [21.6815, 72.5805],
+        [21.6808, 72.5730],
+        [21.6808, 72.5690]
+      ],
+      "width_m": 10.0,
+      "surface": "Asphalt Heavy-Duty",
+      "accessibility": true,
+      "status": "OPEN"
+    },
+    {
+      "id": "RD-05",
+      "name": "Central Spine Avenue (North-South)",
+      "from_node": "N-NMID",
+      "to_node": "N-SMID",
+      "coordinates": [
+        [21.6895, 72.5750],
+        [21.6865, 72.5750],
+        [21.6835, 72.5750],
+        [21.6808, 72.5750]
+      ],
+      "width_m": 12.0,
+      "surface": "Reinforced Concrete",
+      "accessibility": true,
+      "status": "OPEN"
+    },
+    {
+      "id": "RD-06",
+      "name": "Chemical Sector Cross Road (East-West North)",
+      "from_node": "N-WCTR",
+      "to_node": "N-ECTR",
+      "coordinates": [
+        [21.6865, 72.5690],
+        [21.6865, 72.5750],
+        [21.6865, 72.5805]
+      ],
+      "width_m": 8.0,
+      "surface": "Asphalt",
+      "accessibility": true,
+      "status": "OPEN"
+    },
+    {
+      "id": "RD-07",
+      "name": "Process Area Cross Road (East-West South)",
+      "from_node": "N-WCTR2",
+      "to_node": "N-ECTR2",
+      "coordinates": [
+        [21.6835, 72.5690],
+        [21.6835, 72.5750],
+        [21.6835, 72.5805]
+      ],
+      "width_m": 8.0,
+      "surface": "Asphalt",
+      "accessibility": true,
+      "status": "OPEN"
+    },
+    {
+      "id": "RD-08",
+      "name": "Ammonia & Cryo Tank Service Lane",
+      "from_node": "N-AMMONIA-JCT",
+      "to_node": "N-NMID",
+      "coordinates": [
+        [21.6855, 72.5745],
+        [21.6865, 72.5750]
+      ],
+      "width_m": 6.0,
+      "surface": "Concrete",
+      "accessibility": true,
+      "status": "OPEN"
+    },
+    {
+      "id": "RD-09",
+      "name": "LPG Sphere Logistics Corridor",
+      "from_node": "N-LPG-JCT",
+      "to_node": "N-SMID",
+      "coordinates": [
+        [21.6838, 72.5728],
+        [21.6835, 72.5750]
+      ],
+      "width_m": 7.0,
+      "surface": "Concrete",
+      "accessibility": true,
+      "status": "OPEN"
+    },
+    {
+      "id": "RD-10",
+      "name": "East Emergency Gate Accessway",
+      "from_node": "N-ECTR",
+      "to_node": "N-GATE3",
+      "coordinates": [
+        [21.6850, 72.5805],
+        [21.6850, 72.5815]
+      ],
+      "width_m": 8.0,
+      "surface": "Heavy Concrete",
+      "accessibility": true,
+      "status": "OPEN"
+    }
+  ],
+  "workers": [
+    { "id": "W-101", "name": "Rajesh Sharma", "role": "Senior Shift Incharge", "sector": "Sector D - Cryogenic Chemical Yard", "coordinates": [21.6856, 72.5747], "active": true, "contact": "+91-9876543201" },
+    { "id": "W-102", "name": "Vikram Patel", "role": "Ammonia Plant Operator", "sector": "Sector D - Cryogenic Chemical Yard", "coordinates": [21.6854, 72.5749], "active": true, "contact": "+91-9876543202" },
+    { "id": "W-103", "name": "Ananya Sen", "role": "Lead Process Engineer", "sector": "Sector D - Cryogenic Chemical Yard", "coordinates": [21.6858, 72.5752], "active": true, "contact": "+91-9876543203" },
+    { "id": "W-104", "name": "Suresh Kumar", "role": "Cryogenic Maintenance Tech", "sector": "Sector D - Cryogenic Chemical Yard", "coordinates": [21.6852, 72.5742], "active": true, "contact": "+91-9876543204" },
+    { "id": "W-105", "name": "Manoj Verma", "role": "Pressure Vessel Inspector", "sector": "Sector D - Cryogenic Chemical Yard", "coordinates": [21.6859, 72.5746], "active": true, "contact": "+91-9876543205" },
+    { "id": "W-106", "name": "Pooja Hegde", "role": "Process Field Technician", "sector": "Sector D - Cryogenic Chemical Yard", "coordinates": [21.6862, 72.5755], "active": true, "contact": "+91-9876543206" },
+    
+    { "id": "W-201", "name": "Arjun Rao", "role": "Reformer Unit Lead", "sector": "Sector A - Liquid Hydrocarbons", "coordinates": [21.6862, 72.5732], "active": true, "contact": "+91-9876543207" },
+    { "id": "W-202", "name": "Sunil Nair", "role": "Reformer Technician", "sector": "Sector A - Liquid Hydrocarbons", "coordinates": [21.6865, 72.5725], "active": true, "contact": "+91-9876543208" },
+    { "id": "W-203", "name": "Deepak Joshi", "role": "Benzene Tank Farm Operator", "sector": "Sector A - Liquid Hydrocarbons", "coordinates": [21.6866, 72.5712], "active": true, "contact": "+91-9876543209" },
+    { "id": "W-204", "name": "Praveen Yadav", "role": "Pump Station Tech", "sector": "Sector A - Liquid Hydrocarbons", "coordinates": [21.6860, 72.5718], "active": true, "contact": "+91-9876543210" },
+
+    { "id": "W-301", "name": "Karthik Menon", "role": "Chlorine Area Supervisor", "sector": "Sector B - Hazardous Inorganics", "coordinates": [21.6873, 72.5735], "active": true, "contact": "+91-9876543211" },
+    { "id": "W-302", "name": "Gaurav Singh", "role": "Acid Scrubber Operator", "sector": "Sector B - Hazardous Inorganics", "coordinates": [21.6862, 72.5768], "active": true, "contact": "+91-9876543212" },
+    { "id": "W-303", "name": "Rohan Deshmukh", "role": "Gas Chromatograph Analyst", "sector": "Sector B - Hazardous Inorganics", "coordinates": [21.6842, 72.5772], "active": true, "contact": "+91-9876543213" },
+    { "id": "W-304", "name": "Amitabha Bose", "role": "Desulfurization Tech", "sector": "Sector B - Hazardous Inorganics", "coordinates": [21.6841, 72.5778], "active": true, "contact": "+91-9876543214" },
+
+    { "id": "W-401", "name": "Naveen Reddy", "role": "LPG Horton Sphere Specialist", "sector": "Sector C - Pressurized Gas Farm", "coordinates": [21.6839, 72.5722], "active": true, "contact": "+91-9876543215" },
+    { "id": "W-402", "name": "Dinesh Chawla", "role": "LPG Loading Gantry Operator", "sector": "Sector C - Pressurized Gas Farm", "coordinates": [21.6834, 72.5738], "active": true, "contact": "+91-9876543216" },
+    { "id": "W-403", "name": "Harish Iyer", "role": "Pressure Safety Relief Tech", "sector": "Sector C - Pressurized Gas Farm", "coordinates": [21.6841, 72.5732], "active": true, "contact": "+91-9876543217" },
+
+    { "id": "W-501", "name": "Dr. Kavita Krishnan", "role": "Chief Safety Officer (HSE)", "sector": "Sector C - Plant Command & Operations", "coordinates": [21.6826, 72.5752], "active": true, "contact": "+91-9876543218" },
+    { "id": "W-502", "name": "Sanjay Gupta", "role": "DCS Console Operator", "sector": "Sector C - Plant Command & Operations", "coordinates": [21.6824, 72.5748], "active": true, "contact": "+91-9876543219" },
+    { "id": "W-503", "name": "Priya Nambiar", "role": "SCADA Automation Engineer", "sector": "Sector C - Plant Command & Operations", "coordinates": [21.6827, 72.5749], "active": true, "contact": "+91-9876543220" },
+    { "id": "W-504", "name": "Alok Mishra", "role": "Emergency Dispatcher", "sector": "Sector C - Plant Command & Operations", "coordinates": [21.6825, 72.5751], "active": true, "contact": "+91-9876543221" },
+    { "id": "W-505", "name": "Meera Agarwal", "role": "Plant Admin Officer", "sector": "Sector C - Plant Command & Operations", "coordinates": [21.6816, 72.5776], "active": true, "contact": "+91-9876543222" },
+
+    { "id": "W-601", "name": "Commander Ramesh Thapa", "role": "Chief Fire Marshal", "sector": "Sector E - Emergency Response", "coordinates": [21.6821, 72.5716], "active": true, "contact": "+91-9876543223" },
+    { "id": "W-602", "name": "Santosh Kadam", "role": "Hazmat Rescue Lead", "sector": "Sector E - Emergency Response", "coordinates": [21.6820, 72.5714], "active": true, "contact": "+91-9876543224" },
+    { "id": "W-603", "name": "Dr. Arvind Swamy", "role": "Occupational Physician", "sector": "Sector E - Emergency Response", "coordinates": [21.6811, 72.5756], "active": true, "contact": "+91-9876543225" },
+    { "id": "W-604", "name": "Sister Mary Joseph", "role": "Trauma Nurse Lead", "sector": "Sector E - Emergency Response", "coordinates": [21.6809, 72.5754], "active": true, "contact": "+91-9876543226" },
+
+    { "id": "W-701", "name": "Tushar Goswami", "role": "Electrical Substation Engineer", "sector": "Sector E - Utilities & Energy", "coordinates": [21.6886, 72.5707], "active": true, "contact": "+91-9876543227" },
+    { "id": "W-702", "name": "Brijesh Tiwari", "role": "Boiler & Steam Operator", "sector": "Sector E - Utilities & Energy", "coordinates": [21.6816, 72.5702], "active": true, "contact": "+91-9876543228" }
+  ],
+  "emergency_resources": [
+    {
+      "id": "RES-FT-01",
+      "name": "Fire Tender Alpha (10,000L Multi-Purpose Water/Foam)",
+      "type": "FIRE_TENDER",
+      "stationed_at": "FS-01",
+      "coordinates": [21.6820, 72.5715],
+      "status": "AVAILABLE",
+      "capacity_details": "10000L Water, 2000L AFFF Foam 3%, 4000 LPM Roof Monitor",
+      "crew_count": 5
+    },
+    {
+      "id": "RES-FT-02",
+      "name": "High-Volume Water Curtain Bowser",
+      "type": "WATER_BOWSER",
+      "stationed_at": "FS-01",
+      "coordinates": [21.6819, 72.5718],
+      "status": "AVAILABLE",
+      "capacity_details": "15000L Water Tank, 4x High-Velocity Curtain Fog Nozzles",
+      "crew_count": 4
+    },
+    {
+      "id": "RES-HR-01",
+      "name": "Hazmat Rapid Response Unit (Level A/B Ensembles)",
+      "type": "HAZMAT_SQUAD",
+      "stationed_at": "FS-01",
+      "coordinates": [21.6821, 72.5713],
+      "status": "AVAILABLE",
+      "capacity_details": "6x Fully Encapsulated Trellchem Level A Suits, Multi-Gas Analyzers, Leak Sealing Kits",
+      "crew_count": 6
+    },
+    {
+      "id": "RES-AMB-01",
+      "name": "Advanced Cardiac & Toxic Resuscitation Ambulance",
+      "type": "AMBULANCE",
+      "stationed_at": "MED-01",
+      "coordinates": [21.6810, 72.5755],
+      "status": "AVAILABLE",
+      "capacity_details": "Dual Ventilators, Hyperbaric O2 Delivery, Chemical Antidote Kit (Cyanokit/Amyl Nitrite/Atropine)",
+      "crew_count": 3
+    },
+    {
+      "id": "RES-ERT-01",
+      "name": "Industrial Emergency Response Team (ERT Alpha)",
+      "type": "ERT_TEAM",
+      "stationed_at": "CR-01",
+      "coordinates": [21.6825, 72.5750],
+      "status": "AVAILABLE",
+      "capacity_details": "Evacuation Marshals, Perimeter Cordon Squad, Communication Relays",
+      "crew_count": 8
+    }
+  ],
+  "hydrants": [
+    { "id": "HYD-01", "coordinates": [21.6857, 72.5741], "flow_lpm": 2500, "pressure_bar": 7.0, "status": "OPERATIONAL" },
+    { "id": "HYD-02", "coordinates": [21.6853, 72.5755], "flow_lpm": 2500, "pressure_bar": 7.2, "status": "OPERATIONAL" },
+    { "id": "HYD-03", "coordinates": [21.6867, 72.5714], "flow_lpm": 2000, "pressure_bar": 6.8, "status": "OPERATIONAL" },
+    { "id": "HYD-04", "coordinates": [21.6877, 72.5734], "flow_lpm": 2000, "pressure_bar": 7.0, "status": "OPERATIONAL" },
+    { "id": "HYD-05", "coordinates": [21.6838, 72.5718], "flow_lpm": 3000, "pressure_bar": 7.5, "status": "OPERATIONAL" },
+    { "id": "HYD-06", "coordinates": [21.6832, 72.5739], "flow_lpm": 3000, "pressure_bar": 7.5, "status": "OPERATIONAL" },
+    { "id": "HYD-07", "coordinates": [21.6825, 72.5745], "flow_lpm": 2000, "pressure_bar": 7.0, "status": "OPERATIONAL" },
+    { "id": "HYD-08", "coordinates": [21.6863, 72.5775], "flow_lpm": 2000, "pressure_bar": 6.9, "status": "OPERATIONAL" }
+  ],
+  "preset_scenarios": [
+    {
+      "id": "SCEN-PRIMARY-01",
+      "title": "T-04 Ammonia Cryogenic Header Rupture (Primary SIH Demo)",
+      "asset_id": "T-04",
+      "chemical_id": "CHEM-NH3",
+      "incident_type": "PIPELINE_LEAK",
+      "release_rate_kg_s": 15.0,
+      "release_duration_min": 30,
+      "operating_temp_c": 32.0,
+      "operating_pressure_bar": 4.5,
+      "wind_speed_kmh": 8.0,
+      "wind_direction_deg": 45.0,
+      "wind_direction_cardinal": "NE",
+      "ambient_temp_c": 32.0,
+      "atmospheric_stability": "D",
+      "humidity_pct": 65.0,
+      "description": "Catastrophic flange seal failure on 250mm liquid ammonia supply header adjacent to T-04, generating a dense vapor cloud dispersing toward North-East process sectors."
+    },
+    {
+      "id": "SCEN-LPG-02",
+      "title": "T-03 LPG Horton Sphere Bottom Valve Leak",
+      "asset_id": "T-03",
+      "chemical_id": "CHEM-LPG",
+      "incident_type": "TANK_LEAK",
+      "release_rate_kg_s": 25.0,
+      "release_duration_min": 20,
+      "operating_temp_c": 28.0,
+      "operating_pressure_bar": 12.0,
+      "wind_speed_kmh": 12.0,
+      "wind_direction_deg": 90.0,
+      "wind_direction_cardinal": "E",
+      "ambient_temp_c": 34.0,
+      "atmospheric_stability": "C",
+      "humidity_pct": 55.0,
+      "description": "Gasket blowout at bottom discharge valve of LPG sphere 01 forming flammable gas vapor cloud with severe BLEVE potential."
+    },
+    {
+      "id": "SCEN-CL2-03",
+      "title": "T-02 Chlorine Bullet Tank Uncontrolled Vapor Release",
+      "asset_id": "T-02",
+      "chemical_id": "CHEM-CL2",
+      "incident_type": "TOXIC_RELEASE",
+      "release_rate_kg_s": 10.0,
+      "release_duration_min": 15,
+      "operating_temp_c": 22.0,
+      "operating_pressure_bar": 7.5,
+      "wind_speed_kmh": 6.0,
+      "wind_direction_deg": 0.0,
+      "wind_direction_cardinal": "N",
+      "ambient_temp_c": 30.0,
+      "atmospheric_stability": "E",
+      "humidity_pct": 70.0,
+      "description": "Thermal relief valve failure on chlorine bullet storage tank emitting concentrated toxic chlorine gas dispersing northward toward Gate 1."
+    }
+  ]
+}
