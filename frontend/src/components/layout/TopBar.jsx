@@ -3,16 +3,18 @@ import {
   ShieldAlert, Search, Bell, User, LogOut, 
   ChevronDown, Satellite, Radio, CheckCircle2, 
   AlertTriangle, RefreshCw, Layers, ShieldCheck,
-  Building2, MapPin, Sparkles, Sliders, Activity, Check
+  Building2, MapPin, Sparkles, Sliders, Activity, Check,
+  Sun, Moon
 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 const ROLE_LABELS = {
-  HSE_COMMANDER: { title: 'Plant Operator / HSE', tier: 'Tier 1 — Facility', badge: 'bg-blue-100 text-blue-800 border-blue-200' },
-  PLANT_MANAGER: { title: 'Plant Operations Manager', tier: 'Tier 1 — Facility', badge: 'bg-blue-100 text-blue-800 border-blue-200' },
-  DISTRICT_AUTHORITY: { title: 'Regional Authority (GIDC)', tier: 'Tier 2 — Regional', badge: 'bg-teal-100 text-teal-800 border-teal-200' },
-  EXECUTIVE_AUTHORITY: { title: 'National Command (NDMA)', tier: 'Tier 3 — National', badge: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
-  FIELD_RESPONDER: { title: 'Emergency / Public Safety (NDRF)', tier: 'Tier 4 — Tactical', badge: 'bg-amber-100 text-amber-800 border-amber-200' },
-  DEMO_ADMIN: { title: 'System Administrator', tier: 'Full Access', badge: 'bg-purple-100 text-purple-800 border-purple-200' }
+  HSE_COMMANDER: { title: 'Plant Operator / HSE', tier: 'Tier 1 — Facility', badge: 'bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
+  PLANT_MANAGER: { title: 'Plant Operations Manager', tier: 'Tier 1 — Facility', badge: 'bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
+  DISTRICT_AUTHORITY: { title: 'Regional Authority (GIDC)', tier: 'Tier 2 — Regional', badge: 'bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-300 border-teal-200 dark:border-teal-800' },
+  EXECUTIVE_AUTHORITY: { title: 'National Command (NDMA)', tier: 'Tier 3 — National', badge: 'bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800' },
+  FIELD_RESPONDER: { title: 'Emergency / Public Safety (NDRF)', tier: 'Tier 4 — Tactical', badge: 'bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800' },
+  DEMO_ADMIN: { title: 'System Administrator', tier: 'Full Access', badge: 'bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800' }
 };
 
 export default function TopBar({
@@ -28,11 +30,10 @@ export default function TopBar({
   onSwitchToDemo,
   liveTelemetry
 }) {
+  const { theme, toggleTheme, isDark } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
-  const [showHealthMenu, setShowHealthMenu] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
 
   const searchRef = useRef(null);
@@ -45,7 +46,7 @@ export default function TopBar({
     return () => clearInterval(timer);
   }, []);
 
-  // Filter facilities and landmarks matching search query
+  // Filter facilities matching search query
   const searchResults = facilities.filter(f => 
     f.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     f.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -57,8 +58,8 @@ export default function TopBar({
   const roleInfo = ROLE_LABELS[currentRole] || ROLE_LABELS.HSE_COMMANDER;
 
   return (
-    <header className="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-2xs">
-      {/* Left: Brand Identity & Location Context */}
+    <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-2.5 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-2xs transition-colors">
+      {/* Left: Brand Identity & Facility Context */}
       <div className="flex items-center space-x-3 shrink-0">
         <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold shadow-xs">
           <ShieldAlert className="w-4.5 h-4.5" />
@@ -66,7 +67,10 @@ export default function TopBar({
         
         <div>
           <div className="flex items-center space-x-2">
-            <span className="font-extrabold text-sm tracking-tight text-slate-900">REACT-X</span>
+            <span className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-slate-100">REACT-X</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 uppercase tracking-wider">
+              INDIA OPERATIONS
+            </span>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${roleInfo.badge}`}>
               {roleInfo.tier}
             </span>
@@ -77,11 +81,11 @@ export default function TopBar({
             <select
               value={selectedFacilityId || (activeFacility?.id || '')}
               onChange={(e) => onSelectFacility && onSelectFacility(e.target.value)}
-              className="text-xs font-semibold text-slate-700 bg-transparent hover:text-blue-600 cursor-pointer pr-4 focus:outline-none appearance-none"
+              className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-transparent hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer pr-4 focus:outline-none appearance-none"
             >
               {facilities.map(f => (
-                <option key={f.id} value={f.id}>
-                  {f.name} ({f.location || 'Gujarat'})
+                <option key={f.id} value={f.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                  {f.name} ({f.location || 'India'})
                 </option>
               ))}
             </select>
@@ -102,13 +106,13 @@ export default function TopBar({
               setShowSearchResults(true);
             }}
             onFocus={() => setShowSearchResults(true)}
-            className="w-full pl-9 pr-4 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900"
+            className="w-full pl-9 pr-4 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900 dark:text-slate-100 placeholder-slate-400"
           />
         </div>
 
         {/* Search Results Dropdown */}
         {showSearchResults && searchQuery.trim() !== '' && (
-          <div className="absolute top-full mt-1.5 left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-xl p-2 z-50 max-h-72 overflow-y-auto">
+          <div className="absolute top-full mt-1.5 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-2 z-50 max-h-72 overflow-y-auto">
             <div className="text-[10px] font-bold uppercase text-slate-400 px-2 py-1">Facilities & Corridors</div>
             {searchResults.length > 0 ? (
               searchResults.map((f) => (
@@ -119,13 +123,13 @@ export default function TopBar({
                     setShowSearchResults(false);
                     setSearchQuery('');
                   }}
-                  className="w-full text-left p-2 rounded-lg hover:bg-slate-50 flex items-center justify-between text-xs cursor-pointer"
+                  className="w-full text-left p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between text-xs cursor-pointer"
                 >
                   <div>
-                    <div className="font-bold text-slate-900">{f.name}</div>
-                    <div className="text-[11px] text-slate-500">{f.location} • {f.id}</div>
+                    <div className="font-bold text-slate-900 dark:text-slate-100">{f.name}</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">{f.location} • {f.id}</div>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold border border-blue-200">
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200 dark:border-blue-800">
                     Jump to Map
                   </span>
                 </button>
@@ -137,140 +141,90 @@ export default function TopBar({
         )}
       </div>
 
-      {/* Right: Role Switcher, Freshness Status & User Profile */}
+      {/* Right: Theme Toggle, Mode Switcher & User Profile */}
       <div className="flex items-center space-x-2.5 shrink-0 text-xs">
         
+        {/* Global Light / Dark Mode Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 cursor-pointer transition shadow-2xs"
+          title={`Switch to ${isDark ? 'Light' : 'Dark'} Mode`}
+        >
+          {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+        </button>
+
         {/* Mode Switcher to Demo Command Room */}
         {onSwitchToDemo && (
           <button
             onClick={onSwitchToDemo}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold cursor-pointer transition-colors shadow-2xs"
-            title="Open Controlled Replay Simulation Mode"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 font-bold cursor-pointer transition-colors shadow-2xs"
+            title="Open Demo Replay Mode"
           >
-            <Sliders className="w-3.5 h-3.5 text-amber-600" />
-            <span className="hidden sm:inline">Demo Command Room</span>
+            <Sliders className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span>Demo Replay • Reference</span>
           </button>
         )}
 
-        {/* Live Satellite / OT Freshness Popover Trigger */}
-        <div className="relative">
+        {/* Executive Situation Brief Button */}
+        {onOpenExecutiveBrief && (
           <button
-            onClick={() => setShowHealthMenu(!showHealthMenu)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold cursor-pointer transition-colors"
+            onClick={onOpenExecutiveBrief}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold border border-slate-200 dark:border-slate-700 cursor-pointer transition shadow-2xs"
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="hidden sm:inline text-xs">SATELLITE: LIVE</span>
-            <ChevronDown className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span className="hidden sm:inline">Executive Brief</span>
           </button>
+        )}
 
-          {showHealthMenu && (
-            <div className="absolute right-0 top-full mt-1.5 w-72 bg-white border border-slate-200 rounded-xl shadow-xl p-3 z-50 space-y-2 text-xs">
-              <div className="font-bold text-slate-900 pb-1 border-b border-slate-100 flex items-center justify-between">
-                <span>National Feeds & Telemetry</span>
-                <span className="text-emerald-600 font-semibold">Active</span>
-              </div>
-              
-              <div className="space-y-1.5 text-[11px]">
-                <div className="flex justify-between items-center text-slate-600">
-                  <span className="flex items-center gap-1.5"><Satellite className="w-3.5 h-3.5 text-blue-600" /> NASA FIRMS VIIRS</span>
-                  <span className="font-mono text-emerald-700 font-bold">LIVE</span>
-                </div>
-                <div className="flex justify-between items-center text-slate-600">
-                  <span className="flex items-center gap-1.5"><Satellite className="w-3.5 h-3.5 text-indigo-600" /> ISRO MOSDAC INSAT</span>
-                  <span className="font-mono text-emerald-700 font-bold">LIVE</span>
-                </div>
-                <div className="flex justify-between items-center text-slate-600">
-                  <span className="flex items-center gap-1.5"><Satellite className="w-3.5 h-3.5 text-teal-600" /> Copernicus Sentinel-2</span>
-                  <span className="font-mono text-slate-700 font-bold">LATEST PASS</span>
-                </div>
-                <div className="flex justify-between items-center text-slate-600">
-                  <span className="flex items-center gap-1.5"><Satellite className="w-3.5 h-3.5 text-amber-600" /> USGS Landsat 8/9</span>
-                  <span className="font-mono text-slate-700 font-bold">LATEST PASS</span>
-                </div>
-                <div className="flex justify-between items-center text-slate-600 pt-1 border-t border-slate-100">
-                  <span className="flex items-center gap-1.5"><Radio className="w-3.5 h-3.5 text-amber-600" /> Plant OT Hardware</span>
-                  <span className="font-mono text-amber-700 font-bold">STANDBY</span>
-                </div>
-                <div className="flex justify-between items-center text-slate-600">
-                  <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-blue-600" /> Predictive OT Inference</span>
-                  <span className="font-mono text-amber-700 font-bold">AWAITING HARDWARE</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Role Switcher Dropdown */}
+        {/* Role Menu */}
         <div className="relative">
           <button
             onClick={() => setShowRoleMenu(!showRoleMenu)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold cursor-pointer transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer font-semibold"
           >
-            <User className="w-3.5 h-3.5 text-slate-600" />
-            <span className="hidden lg:inline">{roleInfo.title}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+            <User className="w-3.5 h-3.5 text-slate-500" />
+            <span className="max-w-[120px] truncate">{roleInfo.title}</span>
+            <ChevronDown className="w-3 h-3 text-slate-400" />
           </button>
 
           {showRoleMenu && (
-            <div className="absolute right-0 top-full mt-1.5 w-60 bg-white border border-slate-200 rounded-xl shadow-xl p-2 z-50 space-y-1">
-              <div className="text-[10px] font-bold uppercase text-slate-400 px-2 py-1 border-b border-slate-100">
-                Switch Operational Role Tier
-              </div>
-              {Object.entries(ROLE_LABELS).map(([key, item]) => (
+            <div className="absolute right-0 top-full mt-1.5 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-1.5 z-50">
+              <div className="text-[10px] font-bold text-slate-400 uppercase px-2 py-1">Select Persona</div>
+              {Object.entries(ROLE_LABELS).map(([roleKey, info]) => (
                 <button
-                  key={key}
+                  key={roleKey}
                   onClick={() => {
-                    onRoleChange && onRoleChange(key);
+                    onRoleChange && onRoleChange(roleKey);
                     setShowRoleMenu(false);
                   }}
                   className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between cursor-pointer ${
-                    currentRole === key ? 'bg-blue-50 text-blue-700 font-bold' : 'hover:bg-slate-50 text-slate-700'
+                    currentRole === roleKey
+                      ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold'
+                      : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                   }`}
                 >
                   <div>
-                    <div className="font-bold">{item.title}</div>
-                    <div className="text-[10px] text-slate-400">{item.tier}</div>
+                    <div>{info.title}</div>
+                    <div className="text-[10px] text-slate-400">{info.tier}</div>
                   </div>
-                  {currentRole === key && <Check className="w-4 h-4 text-blue-600" />}
+                  {currentRole === roleKey && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Executive Brief Modal Trigger */}
-        <button
-          onClick={onOpenExecutiveBrief}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer transition-colors shadow-xs"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Situation Brief</span>
-        </button>
-
-        {/* User Account / Logout */}
-        <div className="relative">
+        {/* Logout */}
+        {onLogout && (
           <button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-700 font-bold cursor-pointer transition"
+            onClick={onLogout}
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+            title="Log Out"
           >
-            {user?.name ? user.name.charAt(0) : 'U'}
+            <LogOut className="w-4 h-4" />
           </button>
+        )}
 
-          {showUserMenu && (
-            <div className="absolute right-0 top-full mt-1.5 w-48 bg-white border border-slate-200 rounded-xl shadow-xl p-2 z-50 space-y-1">
-              <div className="px-2 py-1.5 border-b border-slate-100">
-                <div className="font-bold text-slate-900 truncate">{user?.name || 'Operator'}</div>
-                <div className="text-[10px] text-slate-500">{roleInfo.title}</div>
-              </div>
-              <button
-                onClick={onLogout}
-                className="w-full text-left px-2 py-1.5 rounded-lg text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer font-semibold"
-              >
-                <LogOut className="w-3.5 h-3.5" /> Logout
-              </button>
-            </div>
-          )}
-        </div>
       </div>
     </header>
   );

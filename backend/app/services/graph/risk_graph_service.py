@@ -16,30 +16,46 @@ class PlantRiskGraphService:
     def _build_authoritative_graph(self):
         self.graph.clear()
 
-        # 1. Asset Nodes
+        # 1. Asset Nodes (Dahej, Hazira LNG Hub, Vadodara PetroChem)
         assets = [
-            ("T-04", {"type": "STORAGE_TANK", "name": "Ammonia Cryogenic Tank", "chemical_id": "CHEM-NH3", "coords": (21.6855, 72.5745), "criticality": "CRITICAL"}),
-            ("T-03", {"type": "STORAGE_TANK", "name": "LPG Horton Sphere 01", "chemical_id": "CHEM-LPG", "coords": (21.6840, 72.5720), "criticality": "CRITICAL"}),
-            ("T-05", {"type": "STORAGE_TANK", "name": "LPG Horton Sphere 02", "chemical_id": "CHEM-LPG", "coords": (21.6835, 72.5735), "criticality": "CRITICAL"}),
-            ("T-01", {"type": "STORAGE_TANK", "name": "Benzene Storage Tank 01", "chemical_id": "CHEM-C6H6", "coords": (21.6865, 72.5710), "criticality": "HIGH"}),
-            ("T-02", {"type": "STORAGE_TANK", "name": "Chlorine Bullet Tank", "chemical_id": "CHEM-CL2", "coords": (21.6875, 72.5730), "criticality": "CRITICAL"}),
-            ("T-06", {"type": "STORAGE_TANK", "name": "H2S Scrubber Column", "chemical_id": "CHEM-H2S", "coords": (21.6860, 72.5770), "criticality": "HIGH"}),
-            ("PU-01", {"type": "PROCESS_UNIT", "name": "Primary Catalytic Reformer", "chemical_id": "CHEM-C6H6", "coords": (21.6860, 72.5730), "criticality": "CRITICAL"}),
-            ("PU-02", {"type": "PROCESS_UNIT", "name": "Ammonia Synthesis Loop", "chemical_id": "CHEM-NH3", "coords": (21.6850, 72.5760), "criticality": "CRITICAL"}),
-            ("PU-03", {"type": "PROCESS_UNIT", "name": "Gas Desulfurization Unit", "chemical_id": "CHEM-H2S", "coords": (21.6840, 72.5775), "criticality": "HIGH"}),
-            ("SUB-01", {"type": "UTILITY", "name": "66kV Main Substation", "chemical_id": None, "coords": (21.6885, 72.5705), "criticality": "HIGH"}),
-            ("CR-01", {"type": "CONTROL_ROOM", "name": "Central Blast-Resistant Control Room", "chemical_id": None, "coords": (21.6825, 72.5750), "criticality": "CRITICAL"}),
-            ("FS-01", {"type": "FIRE_STATION", "name": "Industrial Fire & Hazmat Station", "chemical_id": None, "coords": (21.6820, 72.5715), "criticality": "HIGH"}),
-            ("MED-01", {"type": "MEDICAL", "name": "Occupational Health Center", "chemical_id": None, "coords": (21.6810, 72.5755), "criticality": "HIGH"}),
+            ("T-04", {"type": "STORAGE_TANK", "name": "Ammonia Cryogenic Tank", "chemical_id": "CHEM-NH3", "coords": (21.6855, 72.5745), "criticality": "CRITICAL", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("T-03", {"type": "STORAGE_TANK", "name": "LPG Horton Sphere 01", "chemical_id": "CHEM-LPG", "coords": (21.6840, 72.5720), "criticality": "CRITICAL", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("T-05", {"type": "STORAGE_TANK", "name": "LPG Horton Sphere 02", "chemical_id": "CHEM-LPG", "coords": (21.6835, 72.5735), "criticality": "CRITICAL", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("T-01", {"type": "STORAGE_TANK", "name": "Benzene Storage Tank 01", "chemical_id": "CHEM-C6H6", "coords": (21.6865, 72.5710), "criticality": "HIGH", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("T-02", {"type": "STORAGE_TANK", "name": "Chlorine Bullet Tank", "chemical_id": "CHEM-CL2", "coords": (21.6875, 72.5730), "criticality": "CRITICAL", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("T-06", {"type": "STORAGE_TANK", "name": "H2S Scrubber Column", "chemical_id": "CHEM-H2S", "coords": (21.6860, 72.5770), "criticality": "HIGH", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("PU-01", {"type": "PROCESS_UNIT", "name": "Primary Catalytic Reformer", "chemical_id": "CHEM-C6H6", "coords": (21.6860, 72.5730), "criticality": "CRITICAL", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("PU-02", {"type": "PROCESS_UNIT", "name": "Ammonia Synthesis Loop", "chemical_id": "CHEM-NH3", "coords": (21.6850, 72.5760), "criticality": "CRITICAL", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("PU-03", {"type": "PROCESS_UNIT", "name": "Gas Desulfurization Unit", "chemical_id": "CHEM-H2S", "coords": (21.6840, 72.5775), "criticality": "HIGH", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("SUB-01", {"type": "UTILITY", "name": "66kV Main Substation", "chemical_id": None, "coords": (21.6885, 72.5705), "criticality": "HIGH", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("CR-01", {"type": "CONTROL_ROOM", "name": "Central Blast-Resistant Control Room", "chemical_id": None, "coords": (21.6825, 72.5750), "criticality": "CRITICAL", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("FS-01", {"type": "FIRE_STATION", "name": "Industrial Fire & Hazmat Station", "chemical_id": None, "coords": (21.6820, 72.5715), "criticality": "HIGH", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("MED-01", {"type": "MEDICAL", "name": "Occupational Health Center", "chemical_id": None, "coords": (21.6810, 72.5755), "criticality": "HIGH", "facility_id": "FAC-IN-DAHEJ-001"}),
+            
+            # Hazira LNG Complex Nodes
+            ("TANK-LNG-02", {"type": "STORAGE_TANK", "name": "Cryogenic LNG Full Containment Tank 02", "chemical_id": "CHEM-LNG", "coords": (21.1155, 72.6355), "criticality": "CRITICAL", "facility_id": "FAC-IN-HAZ-003"}),
+            ("TANK-LNG-01", {"type": "STORAGE_TANK", "name": "Cryogenic LNG Full Containment Tank 01", "chemical_id": "CHEM-LNG", "coords": (21.1148, 72.6342), "criticality": "CRITICAL", "facility_id": "FAC-IN-HAZ-003"}),
+            ("SPHERE-03", {"type": "STORAGE_TANK", "name": "Pressurized Propane Sphere 03", "chemical_id": "CHEM-LPG", "coords": (21.1162, 72.6368), "criticality": "CRITICAL", "facility_id": "FAC-IN-HAZ-003"}),
+            ("VAP-01", {"type": "PROCESS_UNIT", "name": "Submerged Combustion Vaporizer Unit 01", "chemical_id": "CHEM-LNG", "coords": (21.1150, 72.6370), "criticality": "HIGH", "facility_id": "FAC-IN-HAZ-003"}),
+            ("CR-HAZ-01", {"type": "CONTROL_ROOM", "name": "Hazira Terminal Control Room", "chemical_id": None, "coords": (21.1135, 72.6330), "criticality": "CRITICAL", "facility_id": "FAC-IN-HAZ-003"}),
+            ("FS-HAZ-01", {"type": "FIRE_STATION", "name": "Hazira LNG Emergency Foam Squad", "chemical_id": None, "coords": (21.1128, 72.6345), "criticality": "HIGH", "facility_id": "FAC-IN-HAZ-003"}),
+
+            # Vadodara Petrochemical Nodes
+            ("FLARE-01", {"type": "FLARE_STACK", "name": "Elevated HP Steam-Assisted Hydrocarbon Flare", "chemical_id": "CHEM-CH4", "coords": (22.3552, 73.1352), "criticality": "HIGH", "facility_id": "FAC-IN-VAD-002"}),
+            ("CRACKER-PU-01", {"type": "PROCESS_UNIT", "name": "Naphtha Cracker Processing Unit", "chemical_id": "CHEM-C6H6", "coords": (22.3540, 73.1340), "criticality": "CRITICAL", "facility_id": "FAC-IN-VAD-002"}),
+            ("KD-01", {"type": "VESSEL", "name": "Flare Knockout Drum & Liquid Seal", "chemical_id": "CHEM-CH4", "coords": (22.3550, 73.1348), "criticality": "HIGH", "facility_id": "FAC-IN-VAD-002"}),
+            ("T-VAD-ETHYLENE", {"type": "STORAGE_TANK", "name": "Ethylene Cryogenic Sphere", "chemical_id": "CHEM-LPG", "coords": (22.3565, 73.1365), "criticality": "CRITICAL", "facility_id": "FAC-IN-VAD-002"})
         ]
         for node_id, attrs in assets:
             self.graph.add_node(node_id, **attrs)
 
         # 2. Pipeline Nodes
         pipelines = [
-            ("PL-101", {"type": "PIPELINE", "name": "Ammonia Cryogenic Transfer Header", "chemical_id": "CHEM-NH3"}),
-            ("PL-202", {"type": "PIPELINE", "name": "LPG Subsurface Interconnect Line", "chemical_id": "CHEM-LPG"}),
-            ("PL-303", {"type": "PIPELINE", "name": "Chlorine Delivery Header", "chemical_id": "CHEM-CL2"}),
+            ("PL-101", {"type": "PIPELINE", "name": "Ammonia Cryogenic Transfer Header", "chemical_id": "CHEM-NH3", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("PL-202", {"type": "PIPELINE", "name": "LPG Subsurface Interconnect Line", "chemical_id": "CHEM-LPG", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("PL-303", {"type": "PIPELINE", "name": "Chlorine Delivery Header", "chemical_id": "CHEM-CL2", "facility_id": "FAC-IN-DAHEJ-001"}),
+            ("PL-LNG-401", {"type": "PIPELINE", "name": "Hazira Subsea Jetty Cryogenic Sendout Header", "chemical_id": "CHEM-LNG", "facility_id": "FAC-IN-HAZ-003"}),
+            ("PL-VAD-GAS", {"type": "PIPELINE", "name": "Vadodara Cracked Gas Flare Header", "chemical_id": "CHEM-CH4", "facility_id": "FAC-IN-VAD-002"}),
         ]
         for node_id, attrs in pipelines:
             self.graph.add_node(node_id, **attrs)
@@ -50,6 +66,9 @@ class PlantRiskGraphService:
             ("ENV-DRAIN-01", {"type": "DRAINAGE", "name": "GIDC Stormwater & Industrial Effluent Channel", "sensitivity": "HIGH", "coords": (21.6795, 72.5740), "description": "Spill runoff migration channel"}),
             ("ENV-SETTLE-01", {"type": "SETTLEMENT", "name": "Dahej Coastal Village & Community", "sensitivity": "CRITICAL", "coords": (21.6780, 72.5690), "population": 4200}),
             ("ENV-HWY-01", {"type": "HIGHWAY", "name": "SH-6 Dahej Industrial Logistics Highway", "sensitivity": "HIGH", "coords": (21.6920, 72.5760), "traffic": "Heavy Tanker Transit"}),
+            ("ENV-HAZ-WATER", {"type": "WATER_BODY", "name": "Tapi River Estuary & Hazira Channel", "sensitivity": "CRITICAL", "coords": (21.1110, 72.6320), "description": "Navigational deepwater channel"}),
+            ("ENV-HAZ-SETTLE", {"type": "SETTLEMENT", "name": "Hazira Coastal Township", "sensitivity": "HIGH", "coords": (21.1080, 72.6400), "population": 8500}),
+            ("ENV-VAD-RES", {"type": "SETTLEMENT", "name": "Koyali Industrial Colony", "sensitivity": "HIGH", "coords": (22.3580, 73.1390), "population": 6200})
         ]
         for node_id, attrs in env_nodes:
             self.graph.add_node(node_id, **attrs)
@@ -65,6 +84,19 @@ class PlantRiskGraphService:
             ("SUB-01", "PU-02", {"relation": "supplies", "type": "ELECTRIC_POWER"}),
             ("FS-01", "T-04", {"relation": "protects", "type": "WATER_CURTAIN_COVERAGE"}),
             ("FS-01", "T-03", {"relation": "protects", "type": "DELUGE_COOLING_COVERAGE"}),
+            
+            # Hazira Connections
+            ("TANK-LNG-02", "PL-LNG-401", {"relation": "connected_to", "risk_weight": 0.95}),
+            ("PL-LNG-401", "VAP-01", {"relation": "feeds", "risk_weight": 0.90}),
+            ("TANK-LNG-02", "TANK-LNG-01", {"relation": "near", "distance_m": 85.0, "risk_weight": 0.88}),
+            ("TANK-LNG-02", "SPHERE-03", {"relation": "near", "distance_m": 120.0, "risk_weight": 0.82}),
+            ("FS-HAZ-01", "TANK-LNG-02", {"relation": "protects", "type": "HIGH_EXPANSION_FOAM"}),
+
+            # Vadodara Connections
+            ("CRACKER-PU-01", "PL-VAD-GAS", {"relation": "feeds", "risk_weight": 0.80}),
+            ("PL-VAD-GAS", "KD-01", {"relation": "connected_to", "risk_weight": 0.85}),
+            ("KD-01", "FLARE-01", {"relation": "feeds", "risk_weight": 0.90}),
+            ("FLARE-01", "T-VAD-ETHYLENE", {"relation": "near", "distance_m": 160.0, "risk_weight": 0.45})
         ]
         for u, v, attrs in edges:
             self.graph.add_edge(u, v, **attrs)

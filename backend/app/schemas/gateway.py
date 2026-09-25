@@ -187,9 +187,11 @@ class DemoScenario(BaseModel):
 
 class DemoReplayState(BaseModel):
     """Real-time playback state of the Demo Command Room."""
-    status: str = "IDLE"  # IDLE, RUNNING, PAUSED, COMPLETED
+    status: str = "IDLE"  # IDLE, RUNNING, PAUSED, COMPLETED, ERROR
     scenario_id: Optional[str] = None
     facility_id: Optional[str] = None
+    facility_name: Optional[str] = None
+    coordinates: Optional[List[float]] = None
     current_step: int = 0
     total_steps: int = 0
     replay_speed: float = 1.0
@@ -204,10 +206,13 @@ class DemoReplayState(BaseModel):
     active_fusion: Optional[Dict[str, Any]] = None
     active_prediction: Optional[Dict[str, Any]] = None
     active_consequence: Optional[Dict[str, Any]] = None
+    active_cascade: Optional[Dict[str, Any]] = None
     active_evacuation: Optional[Dict[str, Any]] = None
     active_preplan_summary: Optional[Dict[str, Any]] = None
+    active_incident_packet: Optional[Dict[str, Any]] = None
     active_failure_injections: FailureInjectionCommand = Field(default_factory=FailureInjectionCommand)
     pipeline_telemetry: Dict[str, Any] = Field(default_factory=dict)
     provenance_trace: List[Dict[str, Any]] = Field(default_factory=list)
 
     model_config = ConfigDict()
+

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { 
   MapContainer, TileLayer, GeoJSON, Marker, 
   Circle, Tooltip, Polyline, useMap 
@@ -7,24 +7,44 @@ import L from 'leaflet';
 import { 
   Layers, Flame, Satellite, Building2, 
   ShieldAlert, Navigation, ChevronDown, ChevronUp, Clock,
-  CheckCircle2, Info
+  CheckCircle2, Info, Network, AlertTriangle
 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
-// Smooth Map Pan/Zoom & Invalidate Size Controller
+// Map Controller with comprehensive ResizeObserver and smooth pan/zoom
 function MapController({ center, zoom }) {
   const map = useMap();
   
   useEffect(() => {
-    // Invalidate size immediately so Leaflet recalculates viewport dimensions
-    const t1 = setTimeout(() => map.invalidateSize(), 50);
-    const t2 = setTimeout(() => map.invalidateSize(), 300);
-    
-    if (center && center[0] && center[1]) {
-      map.setView(center, zoom || 14, { animate: true });
+    const handleResize = () => {
+      try {
+        map.invalidateSize();
+      } catch (e) {}
+    };
+
+    // Invalidate immediately and after transition animations
+    const t1 = setTimeout(handleResize, 50);
+    const t2 = setTimeout(handleResize, 250);
+    const t3 = setTimeout(handleResize, 600);
+
+    const container = map.getContainer();
+    let ro = null;
+    if (typeof ResizeObserver !== 'undefined' && container) {
+      ro = new ResizeObserver(() => {
+        handleResize();
+      });
+      ro.observe(container);
     }
+
+    if (center && center[0] && center[1]) {
+      map.setView(center, zoom || map.getZoom() || 14, { animate: true });
+    }
+
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
+      clearTimeout(t3);
+      if (ro && container) ro.unobserve(container);
     };
   }, [center, zoom, map]);
 
@@ -41,6 +61,7 @@ export default function CommandMapWorkspace({
   simulationResult = null,
   currentTimeStep = 120,
   onChangeTimeStep,
+  cascadePathways = null,
   evacuationPlan = null,
   selectedFacilityId = null,
   selectedEventId = null,
@@ -49,11 +70,15 @@ export default function CommandMapWorkspace({
   onSelectThermalEvent,
   onSelectThermalSource
 }) {
+  const { isDark } = useTheme();
+  const mapContainerRef = useRef(null);
+
   const [layers, setLayers] = useState({
     facilities: true,
     thermalHotspots: true,
     persistentSources: true,
     threatZones: true,
+    cascadePathways: true,
     evacuationRoutes: true
   });
 
@@ -96,10 +121,10 @@ export default function CommandMapWorkspace({
       label = '🌾';
     }
 
-    const ring = isSelected ? 'ring-3 ring-blue-600 ring-offset-2' : 'shadow-md';
+    const ring = isSelected ? 'ring-3 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900' : 'shadow-md';
 
     const html = `
-      <div class="relative flex items-center justify-center w-7 h-7 rounded-full border-2 border-white text-xs font-bold ${bgClass} ${ring} transition-transform hover:scale-110">
+      <div class="relative flex items-center justify-center w-7 h-7 rounded-full border-2 border-white dark:border-slate-800 text-xs font-bold ${bgClass} ${ring} transition-transform hover:scale-110">
         <span>${label}</span>
         ${evt.frp_mw ? `<span class="absolute -top-1.5 -right-2 px-1 rounded bg-slate-900 text-white text-[8px] font-mono font-bold">${Math.round(evt.frp_mw)}M</span>` : ''}
       </div>
@@ -111,10 +136,10 @@ export default function CommandMapWorkspace({
   const getFacilityIcon = (fac, isSelected) => {
     const isAbnormal = fac.current_status !== 'NOMINAL_OPERATIONS' || (fac.current_abnormality_score && fac.current_abnormality_score > 40);
     const bgClass = isAbnormal ? 'bg-red-600 text-white' : 'bg-blue-600 text-white';
-    const ring = isSelected ? 'ring-3 ring-blue-600 ring-offset-2' : 'shadow-md';
+    const ring = isSelected ? 'ring-3 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900' : 'shadow-md';
 
     const html = `
-      <div class="flex items-center justify-center w-7 h-7 rounded-lg border-2 border-white text-xs font-bold ${bgClass} ${ring} transition-transform hover:scale-110">
+      <div class="flex items-center justify-center w-7 h-7 rounded-lg border-2 border-white dark:border-slate-800 text-xs font-bold ${bgClass} ${ring} transition-transform hover:scale-110">
         🏢
       </div>
     `;
@@ -139,8 +164,14 @@ export default function CommandMapWorkspace({
     };
   };
 
+  // Active Cascade Links
+  const cascadeLinks = useMemo(() => {
+    if (!cascadePathways || !cascadePathways.threatened_nodes) return [];
+    return cascadePathways.threatened_nodes;
+  }, [cascadePathways]);
+
   return (
-    <div className="relative w-full h-full min-h-[400px] bg-slate-100 flex flex-col overflow-hidden">
+    <div ref={mapContainerRef} className="relative w-full h-full min-h-[400px] bg-slate-100 dark:bg-slate-950 flex flex-col overflow-hidden">
       
       {/* Top Floating Controls: Layers & Active Simulation Slider */}
       <div className="absolute top-3 right-3 z-[400] flex flex-col items-end space-y-2 pointer-events-auto">
@@ -149,22 +180,22 @@ export default function CommandMapWorkspace({
         <div className="relative">
           <button
             onClick={() => setShowLayersDropdown(!showLayersDropdown)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/95 backdrop-blur hover:bg-white text-slate-800 font-bold text-xs border border-slate-300 shadow-md cursor-pointer transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/95 dark:bg-slate-900/95 backdrop-blur hover:bg-white dark:hover:bg-slate-900 text-slate-800 dark:text-slate-100 font-bold text-xs border border-slate-300 dark:border-slate-700 shadow-md cursor-pointer transition-all"
           >
-            <Layers className="w-4 h-4 text-blue-600" />
+            <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <span>LAYERS ({Object.values(layers).filter(Boolean).length})</span>
             <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
           </button>
 
           {showLayersDropdown && (
-            <div className="absolute right-0 top-full mt-1.5 w-60 bg-white border border-slate-200 rounded-xl shadow-xl p-3 z-50 text-xs space-y-2">
-              <div className="font-bold text-slate-900 pb-1 border-b border-slate-100 flex justify-between">
+            <div className="absolute right-0 top-full mt-1.5 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-3 z-50 text-xs space-y-2">
+              <div className="font-bold text-slate-900 dark:text-slate-100 pb-1 border-b border-slate-100 dark:border-slate-800 flex justify-between">
                 <span>Map Overlays</span>
-                <span className="text-blue-600 text-[10px] font-bold">GIS Active</span>
+                <span className="text-blue-600 dark:text-blue-400 text-[10px] font-bold">GIS Active</span>
               </div>
 
               <div className="space-y-1.5">
-                <label className="flex items-center justify-between text-slate-700 cursor-pointer">
+                <label className="flex items-center justify-between text-slate-700 dark:text-slate-300 cursor-pointer">
                   <span className="flex items-center gap-1.5">🏢 Industrial Facilities</span>
                   <input 
                     type="checkbox" 
@@ -174,7 +205,7 @@ export default function CommandMapWorkspace({
                   />
                 </label>
 
-                <label className="flex items-center justify-between text-slate-700 cursor-pointer">
+                <label className="flex items-center justify-between text-slate-700 dark:text-slate-300 cursor-pointer">
                   <span className="flex items-center gap-1.5">🔥 Live Thermal Hotspots</span>
                   <input 
                     type="checkbox" 
@@ -184,7 +215,7 @@ export default function CommandMapWorkspace({
                   />
                 </label>
 
-                <label className="flex items-center justify-between text-slate-700 cursor-pointer">
+                <label className="flex items-center justify-between text-slate-700 dark:text-slate-300 cursor-pointer">
                   <span className="flex items-center gap-1.5">⚡ Persistent Flare Sources</span>
                   <input 
                     type="checkbox" 
@@ -194,7 +225,7 @@ export default function CommandMapWorkspace({
                   />
                 </label>
 
-                <label className="flex items-center justify-between text-slate-700 cursor-pointer">
+                <label className="flex items-center justify-between text-slate-700 dark:text-slate-300 cursor-pointer">
                   <span className="flex items-center gap-1.5">🚨 Threat & Hazard Plumes</span>
                   <input 
                     type="checkbox" 
@@ -204,7 +235,17 @@ export default function CommandMapWorkspace({
                   />
                 </label>
 
-                <label className="flex items-center justify-between text-slate-700 cursor-pointer">
+                <label className="flex items-center justify-between text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <span className="flex items-center gap-1.5">🔗 Domino / Cascade Chain</span>
+                  <input 
+                    type="checkbox" 
+                    checked={layers.cascadePathways} 
+                    onChange={(e) => setLayers({ ...layers, cascadePathways: e.target.checked })} 
+                    className="accent-blue-600"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between text-slate-700 dark:text-slate-300 cursor-pointer">
                   <span className="flex items-center gap-1.5">🧭 Evacuation Routes</span>
                   <input 
                     type="checkbox" 
@@ -220,12 +261,12 @@ export default function CommandMapWorkspace({
 
         {/* Time Step Scrubber (When Active Simulation Exists) */}
         {simulationResult && simulationResult.time_steps && (
-          <div className="bg-white/95 backdrop-blur border border-slate-300 rounded-xl p-2.5 shadow-md text-xs space-y-1 w-60 font-medium">
-            <div className="flex justify-between items-center text-slate-700">
-              <span className="flex items-center gap-1 font-bold text-slate-900">
-                <Clock className="w-3.5 h-3.5 text-blue-600" /> Plume Dispersion
+          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 shadow-md text-xs space-y-1 w-60 font-medium text-slate-800 dark:text-slate-100">
+            <div className="flex justify-between items-center">
+              <span className="flex items-center gap-1 font-bold">
+                <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Plume Dispersion
               </span>
-              <span className="font-mono text-blue-700 font-bold">T+{currentTimeStep}s</span>
+              <span className="font-mono text-blue-700 dark:text-blue-400 font-bold">T+{currentTimeStep}s</span>
             </div>
             <input 
               type="range"
@@ -246,30 +287,22 @@ export default function CommandMapWorkspace({
         )}
       </div>
 
-      {/* Zero Active Incidents Status Banner (Non-intrusive) */}
-      {thermalEvents.length === 0 && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[400] bg-white/90 backdrop-blur border border-slate-200 px-3.5 py-1.5 rounded-full shadow-md text-xs font-semibold text-slate-700 flex items-center gap-2 pointer-events-none">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          <span>No active thermal anomalies in current sector. Facility baselines nominal.</span>
-        </div>
-      )}
-
       {/* Bottom Left: Collapsible Minimal Map Legend */}
       <div className="absolute bottom-3 left-3 z-[400] pointer-events-auto">
         {showLegend ? (
-          <div className="bg-white/95 backdrop-blur border border-slate-300 rounded-xl p-2.5 shadow-md text-xs space-y-1.5 max-w-xs animate-in fade-in duration-100">
-            <div className="flex items-center justify-between font-bold text-slate-900 pb-1 border-b border-slate-100">
-              <span className="text-[11px] uppercase tracking-wider text-slate-500">Map Legend</span>
+          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 shadow-md text-xs space-y-1.5 max-w-xs animate-in fade-in duration-100">
+            <div className="flex items-center justify-between font-bold text-slate-900 dark:text-slate-100 pb-1 border-b border-slate-100 dark:border-slate-800">
+              <span className="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">Map Legend</span>
               <button 
                 onClick={() => setShowLegend(false)}
-                className="text-slate-400 hover:text-slate-700 p-0.5 rounded cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5 rounded cursor-pointer"
                 title="Collapse Legend"
               >
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] font-medium text-slate-700">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] font-medium text-slate-700 dark:text-slate-300">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-600"></span>
                 <span>Industrial Fire 🚨</span>
@@ -299,7 +332,7 @@ export default function CommandMapWorkspace({
         ) : (
           <button
             onClick={() => setShowLegend(true)}
-            className="px-2.5 py-1.5 rounded-lg bg-white/95 backdrop-blur border border-slate-300 shadow-md text-xs font-bold text-slate-700 hover:text-blue-600 flex items-center gap-1 cursor-pointer"
+            className="px-2.5 py-1.5 rounded-lg bg-white/95 dark:bg-slate-900/95 backdrop-blur border border-slate-300 dark:border-slate-700 shadow-md text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-blue-600 flex items-center gap-1 cursor-pointer"
           >
             <span>Legend</span>
             <ChevronUp className="w-3.5 h-3.5" />
@@ -316,12 +349,22 @@ export default function CommandMapWorkspace({
       >
         <MapController center={center} zoom={zoom} />
 
-        {/* Clean OpenStreetMap Light Basemap Tiles */}
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxZoom={19}
-        />
+        {/* Dynamic Light / Dark Basemap Tiles */}
+        {isDark ? (
+          <TileLayer
+            key="carto-dark"
+            attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            maxZoom={19}
+          />
+        ) : (
+          <TileLayer
+            key="osm-light"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maxZoom={19}
+          />
+        )}
 
         {/* 1. Industrial Facilities Fences & Markers */}
         {layers.facilities && facilities.map((fac) => {
@@ -336,9 +379,9 @@ export default function CommandMapWorkspace({
                     center={fac.coordinates}
                     radius={fac.fence_radius_m || 450}
                     pathOptions={{
-                      color: isAbnormal ? '#dc2626' : '#0284c7',
-                      fillColor: isAbnormal ? '#fee2e2' : '#e0f2fe',
-                      fillOpacity: 0.18,
+                      color: isAbnormal ? '#dc2626' : (isDark ? '#38bdf8' : '#0284c7'),
+                      fillColor: isAbnormal ? '#fee2e2' : (isDark ? '#0369a1' : '#e0f2fe'),
+                      fillOpacity: isDark ? 0.25 : 0.18,
                       weight: isSelected ? 2.5 : 1.5,
                       dashArray: '5, 5'
                     }}
@@ -350,10 +393,10 @@ export default function CommandMapWorkspace({
                       click: () => onSelectFacility && onSelectFacility(fac.id)
                     }}
                   >
-                    <Tooltip direction="top" offset={[0, -14]} opacity={0.95} className="leaflet-light-tooltip">
+                    <Tooltip direction="top" offset={[0, -14]} opacity={0.95}>
                       <div>
                         <b>{fac.name}</b><br/>
-                        <span className="text-slate-500">{fac.location}</span>
+                        <span className="text-slate-500 dark:text-slate-400">{fac.location}</span>
                       </div>
                     </Tooltip>
                   </Marker>
@@ -377,9 +420,9 @@ export default function CommandMapWorkspace({
                 click: () => onSelectThermalEvent && onSelectThermalEvent(evt)
               }}
             >
-              <Tooltip direction="top" offset={[0, -14]} opacity={0.95} className="leaflet-light-tooltip">
+              <Tooltip direction="top" offset={[0, -14]} opacity={0.95}>
                 <div>
-                  <b className="text-red-700">{evt.classification || 'THERMAL ANOMALY'}</b><br/>
+                  <b className="text-red-600 dark:text-red-400">{evt.classification || 'THERMAL ANOMALY'}</b><br/>
                   <span>FRP: <b>{evt.frp_mw ? Math.round(evt.frp_mw) : 'N/A'} MW</b></span> • 
                   <span> Temp: <b>{evt.brightness_temp_k ? Math.round(evt.brightness_temp_k) : 'N/A'} K</b></span>
                 </div>
@@ -388,7 +431,45 @@ export default function CommandMapWorkspace({
           );
         })}
 
-        {/* 3. Dispersion Plume GeoJSON Layer */}
+        {/* 3. Domino / Cascade Pathway Overlays */}
+        {layers.cascadePathways && cascadeLinks.length > 0 && center && (
+          <>
+            {cascadeLinks.map((node, idx) => {
+              const targetCoords = [center[0] + (idx === 0 ? 0.001 : (idx === 1 ? -0.0015 : 0.002)), center[1] + (idx === 0 ? 0.0015 : (idx === 1 ? 0.002 : -0.0015))];
+              return (
+                <React.Fragment key={`cascade-pathway-${idx}`}>
+                  <Polyline
+                    positions={[center, targetCoords]}
+                    pathOptions={{
+                      color: node.cascade_probability_pct > 80 ? '#ef4444' : '#f59e0b',
+                      weight: 3,
+                      dashArray: '6, 6',
+                      opacity: 0.85
+                    }}
+                  />
+                  <Circle
+                    center={targetCoords}
+                    radius={45}
+                    pathOptions={{
+                      color: node.cascade_probability_pct > 80 ? '#dc2626' : '#d97706',
+                      fillColor: node.cascade_probability_pct > 80 ? '#fee2e2' : '#fef3c7',
+                      fillOpacity: 0.4
+                    }}
+                  >
+                    <Tooltip direction="top">
+                      <div>
+                        <b>{node.name}</b><br/>
+                        <span>Cascade Risk: <b className="text-red-600">{node.cascade_probability_pct}%</b></span>
+                      </div>
+                    </Tooltip>
+                  </Circle>
+                </React.Fragment>
+              );
+            })}
+          </>
+        )}
+
+        {/* 4. Dispersion Plume GeoJSON Layer */}
         {layers.threatZones && activeGeoJSON && (
           <GeoJSON
             key={`plume-geojson-${currentTimeStep}`}
@@ -397,7 +478,7 @@ export default function CommandMapWorkspace({
           />
         )}
 
-        {/* 4. Evacuation Dynamic Routing Polylines & Assembly Markers */}
+        {/* 5. Evacuation Dynamic Routing Polylines & Assembly Markers */}
         {layers.evacuationRoutes && evacuationPlan && (
           <>
             {/* Primary Route */}
@@ -416,15 +497,15 @@ export default function CommandMapWorkspace({
                   <Marker
                     position={evacuationPlan.primary_evacuation_route.assembly_point_coords}
                     icon={createDivIcon(
-                      `<div class="w-7 h-7 rounded-full bg-emerald-600 border-2 border-white flex items-center justify-center text-white text-xs shadow-lg font-bold">🟢</div>`,
+                      `<div class="w-7 h-7 rounded-full bg-emerald-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-white text-xs shadow-lg font-bold">🟢</div>`,
                       [28, 28]
                     )}
                   >
-                    <Tooltip direction="top" offset={[0, -14]} opacity={0.95} className="leaflet-light-tooltip">
+                    <Tooltip direction="top" offset={[0, -14]} opacity={0.95}>
                       <div>
-                        <b className="text-emerald-700">Muster Staging Gate</b><br/>
+                        <b className="text-emerald-700 dark:text-emerald-400">Designated Safe Assembly Point</b><br/>
                         <span>{evacuationPlan.primary_evacuation_route.recommended_assembly_point_name || 'Designated Safe Gate'}</span><br/>
-                        <span className="text-slate-500 font-mono text-[10px]">Distance: {evacuationPlan.primary_evacuation_route.total_distance_m?.toFixed(0)}m</span>
+                        <span className="text-slate-500 dark:text-slate-400 font-mono text-[10px]">Distance: {evacuationPlan.primary_evacuation_route.total_distance_m?.toFixed(0)}m</span>
                       </div>
                     </Tooltip>
                   </Marker>
@@ -432,7 +513,7 @@ export default function CommandMapWorkspace({
               </>
             )}
 
-            {/* Candidate / Secondary Routes */}
+            {/* Secondary / Candidate Routes */}
             {evacuationPlan.secondary_evacuation_route?.route_coordinates && (
               <Polyline
                 positions={evacuationPlan.secondary_evacuation_route.route_coordinates}
@@ -444,20 +525,6 @@ export default function CommandMapWorkspace({
                 }}
               />
             )}
-
-            {/* Legacy array fallback */}
-            {Array.isArray(evacuationPlan.routes) && evacuationPlan.routes.map((route, idx) => (
-              <Polyline
-                key={`legacy-evac-route-${idx}`}
-                positions={route.path_coordinates || route.coordinates || []}
-                pathOptions={{
-                  color: '#16a34a',
-                  weight: 4,
-                  opacity: 0.9,
-                  dashArray: '6, 6'
-                }}
-              />
-            ))}
           </>
         )}
 
@@ -465,4 +532,3 @@ export default function CommandMapWorkspace({
     </div>
   );
 }
-

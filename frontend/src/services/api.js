@@ -1231,14 +1231,14 @@ export const api = {
   async exportPrePlanPDF(facilityId = 'FAC-IN-DAHEJ-001', assetId = 'T-04', chemicalId = 'CHEM-NH3') {
     const cleanChemId = chemicalId.startsWith('CHEM-') ? chemicalId : `CHEM-${chemicalId.replace('CH-', '')}`;
     const simRes = await this.runSimulation({
-      facility_id: facilityId,
+      title: `${facilityId} Emergency Pre-Plan Response`,
       asset_id: assetId,
       chemical_id: cleanChemId,
-      release_type: 'CONTINUOUS_TOXIC_PLUME',
+      incident_type: 'TOXIC_RELEASE',
       release_rate_kg_s: 15.0,
-      release_duration_sec: 1800,
-      ambient_temperature_c: 32.0,
-      wind_speed_m_s: 2.2,
+      release_duration_min: 30,
+      ambient_temp_c: 32.0,
+      wind_speed_kmh: 12.0,
       wind_direction_deg: 45.0,
       atmospheric_stability: 'D'
     });

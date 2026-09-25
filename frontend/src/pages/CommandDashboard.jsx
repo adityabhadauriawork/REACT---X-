@@ -7,6 +7,7 @@ import ToolMenu from '../components/layout/ToolMenu';
 import CommandMapWorkspace from '../components/map/CommandMapWorkspace';
 import ContextIntelligencePanel from '../components/panels/ContextIntelligencePanel';
 import ExecutiveBriefModal from '../components/intelligence/ExecutiveBriefModal';
+import EmergencyResponseModal from '../components/intelligence/EmergencyResponseModal';
 
 export default function CommandDashboard({
   user,
@@ -36,10 +37,12 @@ export default function CommandDashboard({
   const [simulationResult, setSimulationResult] = useState(null);
   const [impactResult, setImpactResult] = useState(null);
   const [evacuationPlan, setEvacuationPlan] = useState(null);
+  const [cascadePathways, setCascadePathways] = useState(null);
   const [currentTimeStep, setCurrentTimeStep] = useState(120);
   const [liveTelemetry, setLiveTelemetry] = useState(null);
 
   const [showExecutiveBrief, setShowExecutiveBrief] = useState(false);
+  const [showSOSModal, setShowSOSModal] = useState(false);
 
   // Initial Data Fetch
   useEffect(() => {
@@ -104,7 +107,7 @@ export default function CommandDashboard({
     return thermalSources.find(s => s.source_id === selectedSourceId) || thermalSources[0];
   }, [thermalSources, selectedSourceId]);
 
-  // Center coords on selected facility or default India industrial corridor
+  // Center coords on selected facility
   const mapCenter = useMemo(() => {
     if (activeFacility && activeFacility.coordinates) {
       return activeFacility.coordinates;
@@ -126,7 +129,7 @@ export default function CommandDashboard({
       const res = await api.runSimulation({
         facility_id: selectedFacilityId,
         asset_id: 'T-04',
-        chemical_id: 'CH-NH3',
+        chemical_id: 'CHEM-NH3',
         release_type: 'CONTINUOUS_TOXIC_PLUME',
         release_rate_kg_s: 15.0,
         release_duration_sec: 1800,
@@ -165,26 +168,30 @@ export default function CommandDashboard({
 
   // Handle Tool Menu Action -> Switch Context Panel Tab
   const handleSelectTool = (toolKey) => {
+    if (toolKey === 'emergency_sos') {
+      setShowSOSModal(true);
+      return;
+    }
+
     setIsContextPanelOpen(true);
-    
     if (toolKey === 'live_thermal' || toolKey === 'facility_status') {
       setContextTab('overview');
     } else if (toolKey === 'persistent_sources') {
       setContextTab('overview');
       if (thermalSources.length > 0) setSelectedSourceId(thermalSources[0].source_id);
-    } else if (toolKey === 'source_classification' || toolKey === 'satellite_comparison' || toolKey === 'historical_analysis') {
+    } else if (toolKey === 'source_classification') {
+      setContextTab('classification');
+    } else if (toolKey === 'satellite_comparison') {
       setContextTab('evidence');
-    } else if (toolKey === 'hazard_prediction' || toolKey === 'preventive_whatif' || toolKey === 'trend_analysis') {
-      setContextTab('prediction');
     } else if (toolKey === 'domino_risk' || toolKey === 'impact_zones') {
-      setContextTab('consequence');
+      setContextTab('domino');
     } else if (toolKey === 'evacuation_support' || toolKey === 'resource_allocation' || toolKey === 'preplan_pdf') {
       setContextTab('response');
     }
   };
 
   return (
-    <div className="h-screen w-screen bg-slate-100 text-slate-900 flex flex-col font-sans overflow-hidden">
+    <div className="h-screen w-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans overflow-hidden transition-colors">
       
       {/* 1. Top Bar */}
       <TopBar
@@ -204,7 +211,7 @@ export default function CommandDashboard({
         liveTelemetry={liveTelemetry}
       />
 
-      {/* 2. Top 5-Metric Strip */}
+      {/* 2. Top Metric Strip */}
       <MetricStrip
         facilities={facilities}
         thermalEvents={thermalEvents}
@@ -222,8 +229,8 @@ export default function CommandDashboard({
           <ToolMenu onSelectTool={handleSelectTool} />
         </div>
 
-        {/* Center: Dominant Light GIS Map Canvas */}
-        <div className="flex-1 h-full w-full relative">
+        {/* Center: Dominant Map Canvas */}
+        <div className="flex-1 h-full w-full relative bg-slate-100 dark:bg-slate-950">
           <CommandMapWorkspace
             center={mapCenter}
             zoom={14}
@@ -234,6 +241,7 @@ export default function CommandDashboard({
             simulationResult={simulationResult}
             currentTimeStep={currentTimeStep}
             onChangeTimeStep={setCurrentTimeStep}
+            cascadePathways={cascadePathways}
             evacuationPlan={evacuationPlan}
             selectedFacilityId={selectedFacilityId}
             selectedEventId={selectedEventId}
@@ -254,7 +262,7 @@ export default function CommandDashboard({
           />
         </div>
 
-        {/* Right: Redesigned Contextual Intelligence Side Panel */}
+        {/* Right: Contextual Intelligence Side Panel */}
         {isContextPanelOpen && (
           <ContextIntelligencePanel
             event={activeThermalEvent}
@@ -265,17 +273,19 @@ export default function CommandDashboard({
             facilities={facilities}
             initialTab={contextTab}
             simulationResult={simulationResult}
+            cascadePathways={cascadePathways}
             onClose={() => setIsContextPanelOpen(false)}
             onSelectThermalEvent={(evt) => setSelectedEventId(evt.event_id)}
             onSelectFacility={(id) => setSelectedFacilityId(id)}
             onRunSimulation={handleRunSimulation}
             onGenerateEvacuation={handleGenerateEvacuation}
             onExportPDF={handleExportPDF}
+            onOpenSOSModal={() => setShowSOSModal(true)}
           />
         )}
       </div>
 
-      {/* 4. Executive Situation Brief Modal (Clean Light Theme) */}
+      {/* 4. Executive Situation Brief Modal */}
       {showExecutiveBrief && (
         <ExecutiveBriefModal
           isOpen={showExecutiveBrief}
@@ -285,6 +295,18 @@ export default function CommandDashboard({
           impactResult={impactResult}
           evacuationPlan={evacuationPlan}
           currentRole={currentRole}
+        />
+      )}
+
+      {/* 5. Emergency Response / SOS Modal */}
+      {showSOSModal && (
+        <EmergencyResponseModal
+          isOpen={showSOSModal}
+          onClose={() => setShowSOSModal(false)}
+          incidentPacket={null}
+          facility={activeFacility}
+          isDemo={false}
+          onExportPDF={handleExportPDF}
         />
       )}
 

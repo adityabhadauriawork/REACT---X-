@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import AuthLanding from './pages/AuthLanding';
 import CommandDashboard from './pages/CommandDashboard';
 import DemoCommandRoom from './pages/DemoCommandRoom';
 
-function App() {
+function AppContent() {
+  const { isDark } = useTheme();
   const [currentUser, setCurrentUser] = useState({
     id: 'USR-OP-01',
     name: 'Chief Safety Controller',
@@ -53,14 +55,14 @@ function App() {
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900 antialiased font-sans">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased font-sans transition-colors">
         <AuthLanding onLoginSuccess={handleLoginSuccess} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 antialiased font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased font-sans transition-colors">
       {activeMode === 'DEMO_COMMAND_ROOM' ? (
         <DemoCommandRoom
           user={currentUser}
@@ -80,4 +82,10 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
