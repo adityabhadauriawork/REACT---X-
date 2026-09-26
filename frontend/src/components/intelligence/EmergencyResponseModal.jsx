@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   ShieldAlert, X, FileText, CheckCircle2, AlertTriangle, 
   Send, Copy, Download, Radio, UserCheck, ShieldCheck, 
@@ -18,6 +19,16 @@ export default function EmergencyResponseModal({
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [authorizerName, setAuthorizerName] = useState('Chief Safety Controller (HSE-01)');
   const [dispatchStatus, setDispatchStatus] = useState('AWAITING_AUTHORIZATION');
+
+  // Keyboard ESC listener
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose && onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
   const [copiedAlert, setCopiedAlert] = useState(false);
   const [activeTab, setActiveTab] = useState('packet'); // 'packet' | 'cap_alert' | 'contacts'
 
@@ -96,9 +107,15 @@ export default function EmergencyResponseModal({
     dlAnchorElem.click();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+  const modalContent = (
+    <div 
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200 pointer-events-auto font-sans"
+      onClick={onClose}
+    >
+      <div 
+        className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Modal Header */}
         <div className="p-4 bg-red-50 dark:bg-red-950/40 border-b border-red-200 dark:border-red-900/60 flex items-center justify-between">
@@ -334,4 +351,9 @@ export default function EmergencyResponseModal({
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 }

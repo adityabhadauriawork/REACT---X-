@@ -11,16 +11,58 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.security import verify_ingestion_api_key
 from app.schemas.gateway import (
     GatewayStatusResponse, GatewaySource, GatewayQualitySummary,
     NormalizedEventRecord, NormalizedTelemetryRecord, DemoScenario,
-    DemoReplayState, FailureInjectionCommand
+    DemoReplayState, FailureInjectionCommand, SourceMode
 )
 from app.services.gateway.data_gateway_service import data_gateway_service
 from app.services.gateway.demo_replay_service import demo_replay_service
 from app.services.satellite.industrial_context_service import industrial_context_service
 
 router = APIRouter(prefix="/data-gateway", tags=["REACT-X Data Gateway"])
+
+
+@router.get("/health")
+def get_data_gateway_health():
+    """Returns dedicated data gateway ingestion subsystem observability and health metrics."""
+    return data_gateway_service.get_health()
+
+
+@router.post("/ingest/event")
+def ingest_observation_event(
+    payload: Dict[str, Any] = Body(...),
+    source_mode: SourceMode = Query(SourceMode.REFERENCE),
+    authenticated: bool = Depends(verify_ingestion_api_key),
+    db: Session = Depends(get_db)
+):
+    """
+    Ingests an individual raw or reference observation through the Data Gateway canonical pipeline:
+    Normalization -> Quality Engine -> Facility Correlation -> 23 Feature Extraction -> 7-Class ML -> D-S Evidential Fusion.
+    """
+    return data_gateway_service.ingest_event_pipeline(
+        raw_event=payload,
+        source_mode=source_mode,
+        db=db
+    )
+
+
+@router.post("/ingest/batch")
+def ingest_observation_batch(
+    payload: List[Dict[str, Any]] = Body(...),
+    source_mode: SourceMode = Query(SourceMode.REFERENCE),
+    authenticated: bool = Depends(verify_ingestion_api_key),
+    db: Session = Depends(get_db)
+):
+    """
+    Ingests a batch of observations with bounded execution and backpressure telemetry.
+    """
+    return data_gateway_service.ingest_batch_pipeline(
+        raw_events=payload,
+        source_mode=source_mode,
+        db=db
+    )
 
 
 @router.get("/status", response_model=GatewayStatusResponse)
@@ -111,7 +153,10 @@ def list_demo_scenarios():
 @router.get("/demo/state", response_model=DemoReplayState)
 def get_demo_state():
     """Returns the current playback state and active pipeline telemetry for Demo Command Room."""
-    return demo_replay_service.get_state()
+    state = demo_replay_service.get_state()
+    if state is None:
+        return demo_replay_service.reset_replay()
+    return state
 
 
 @router.post("/demo/start", response_model=DemoReplayState)
@@ -145,6 +190,16 @@ def step_demo_replay(db: Session = Depends(get_db)):
 def inject_demo_failure(cmd: FailureInjectionCommand = Body(...)):
     """Applies failure injection flags (missing telemetry, stale data, spike, conflict) to test resilient UI transitions."""
     return demo_replay_service.inject_failure(cmd)
+
+
+@router.post("/demo/{scenario_id}", response_model=DemoReplayState)
+@router.post("/demo/{scenario_id}/start", response_model=DemoReplayState)
+def start_demo_scenario_by_path(
+    scenario_id: str,
+    speed: float = Query(1.0, ge=0.1, le=10.0)
+):
+    """Initializes and starts playback of a reference scenario using path parameter."""
+    return demo_replay_service.start_replay(scenario_id=scenario_id, speed=speed)
 
 
 @router.get("/demo/stream")

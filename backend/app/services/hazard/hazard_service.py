@@ -366,7 +366,7 @@ class HazardService:
                 "roughness_length_m": 0.5,
                 "advection_speed_m_s": round(wind_u_m_s, 2),
                 "is_certified_aloha": False,
-                "purpose": "SIH26162 Decision-Support Screening Workflow"
+                "purpose": "REACT-X Decision-Support Screening Workflow"
             }
         )
 

@@ -21,4 +21,4 @@ class CopilotChatResponse(BaseModel):
     grounded_metrics: Dict[str, Any] = {}
     suggested_followups: List[str] = []
     action_recommended: Optional[str] = None
-    disclaimer: str = "AI EMERGENCY COPILOT — Grounded in active SIH-1505 simulation telemetry."
+    disclaimer: str = "AI EMERGENCY COPILOT — Grounded in active REACT-X simulation telemetry."

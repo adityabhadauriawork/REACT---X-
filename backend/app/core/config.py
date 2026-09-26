@@ -27,7 +27,7 @@ load_dotenv(BASE_DIR.parent / ".env")
 
 
 class Settings:
-    PROJECT_NAME: str = "SIH26162 — AI Satellite Thermal Intelligence & Industrial Fire Platform"
+    PROJECT_NAME: str = "REACT-X — Industrial Thermal Intelligence & Emergency Response Platform"
     PROJECT_VERSION: str = "2.0.0"
     SYSTEM_VERSION: str = "2.0.0-rc1"
     API_V1_STR: str = "/api"

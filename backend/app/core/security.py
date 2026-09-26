@@ -39,6 +39,26 @@ class RoleSecurity:
             )
         return True
 
+
+def verify_ingestion_api_key(api_key: Optional[str] = Security(API_KEY_HEADER)) -> bool:
+    """
+    Validates X-REACT-X-API-KEY on ingestion endpoints.
+    If REACTX_INGESTION_API_KEY is configured in backend environment, the header is strictly enforced.
+    If no key is configured in dev/demo environment, open access with REFERENCE provenance is allowed.
+    """
+    import os
+    expected_key = os.getenv("REACTX_INGESTION_API_KEY", "").strip()
+    if not expected_key:
+        return True
+    
+    if not api_key or api_key.strip() != expected_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing X-REACT-X-API-KEY authentication header."
+        )
+    return True
+
+
 def add_security_headers(response):
     """Adds hardened HTTP security headers."""
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -46,3 +66,4 @@ def add_security_headers(response):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
+

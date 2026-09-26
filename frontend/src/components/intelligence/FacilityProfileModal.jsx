@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Building2, X, AlertTriangle, ShieldCheck, Flame, 
   Activity, Radio, Compass, FileText, ChevronRight, Siren, CheckCircle2,
-  BarChart2, Layers
+  BarChart2, Layers, Cpu
 } from 'lucide-react';
 import FacilityThermalHealthCard from '../facilities/FacilityThermalHealthCard';
 import FacilityTelemetryCard from '../facilities/FacilityTelemetryCard';
 import FacilityHazardPredictionCard from '../facilities/FacilityHazardPredictionCard';
 import FacilityMultimodalFusionCard from '../facilities/FacilityMultimodalFusionCard';
 import FacilityAdaptiveMonitoringCard from '../facilities/FacilityAdaptiveMonitoringCard';
-import { Cpu } from 'lucide-react';
 
 export default function FacilityProfileModal({
   isOpen,
@@ -18,15 +18,31 @@ export default function FacilityProfileModal({
   activeHotspots = [],
   onInitiateHandoff
 }) {
-  const [activeTab, setActiveTab] = useState('multimodal_fusion'); // multimodal_fusion, thermal_profile, hazard_trajectory, facility_telemetry, infrastructure, active_hotspots
+  const [activeTab, setActiveTab] = useState('multimodal_fusion');
+
+  // Keyboard ESC listener
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose && onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !facility) return null;
 
   const isAbnormal = facility.current_status !== 'NOMINAL_OPERATIONS' || facility.current_abnormality_score > 30.0;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200 font-mono text-xs text-slate-200">
-      <div className="bg-[#090d16] border border-slate-700/90 rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+  const modalContent = (
+    <div 
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200 font-sans text-xs text-slate-200 pointer-events-auto"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-[#090d16] border border-slate-700/90 rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header */}
         <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-slate-950 to-[#0e1626]">
@@ -297,4 +313,9 @@ export default function FacilityProfileModal({
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 }

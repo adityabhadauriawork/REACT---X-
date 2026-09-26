@@ -10,7 +10,7 @@ from app.schemas.thermal_source import (
 )
 from app.services.satellite.thermal_source_service import thermal_source_service
 
-router = APIRouter(prefix="/facilities", tags=["SIH26162 Industrial Facilities Registry"])
+router = APIRouter(prefix="/facilities", tags=["REACT-X Industrial Facilities Registry"])
 
 @router.get("", response_model=List[IndustrialFacilityDetail])
 def get_industrial_facilities(

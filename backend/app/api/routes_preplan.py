@@ -20,7 +20,7 @@ class PrePlanFullPayload(BaseModel):
     impact_result: ImpactAnalysisResult
     evacuation_plan: EvacuationPlanResponse
     resource_plan: ResourceOptimizationPlan
-    author_name: str = "SIH-1505 Decision Support Engine"
+    author_name: str = "REACT-X Decision Support Engine"
     facility_ref: str = "PCH-ALPHA-04 (Demo Facility — Non-Statutory Evaluation)"
     authorization_id: Optional[str] = None
 

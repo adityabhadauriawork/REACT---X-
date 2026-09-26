@@ -79,7 +79,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.PROJECT_VERSION,
-    description="SIH26162 — AI-Based Detection and Classification of Industrial Fires and Persistent Thermal Sources Using NASA FIRMS, OSM & Satellite Data",
+    description="REACT-X — AI-Based Multi-Modal Thermal Intelligence and Emergency Response Platform for Monitored Industrial Facilities Across India.",
     lifespan=lifespan
 )
 
@@ -173,7 +173,7 @@ def api_version():
 @app.get("/")
 def root_info():
     return {
-        "message": "SIH26162 AI Satellite Thermal Intelligence & Industrial Fire Command Platform API is running.",
+        "message": "REACT-X AI Satellite Thermal Intelligence & Industrial Emergency Response Platform API is running.",
         "docs_url": "/docs",
         "api_prefix": settings.API_V1_STR
     }

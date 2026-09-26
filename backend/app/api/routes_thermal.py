@@ -26,7 +26,7 @@ from app.services.satellite.nightfire_service import nightfire_service
 from app.services.satellite.confirmation_service import confirmation_service
 from app.services.satellite.firms_ingestion_service import firms_ingestion_service
 
-router = APIRouter(prefix="/thermal", tags=["SIH26162 Satellite Thermal Intelligence"])
+router = APIRouter(prefix="/thermal", tags=["REACT-X Satellite Thermal Intelligence"])
 
 # =========================================================================
 # 1. CANONICAL THERMAL OBSERVATIONS & QUERY API
@@ -172,9 +172,14 @@ def get_persistent_thermal_sources(
     """
     Fetch multi-month persistent thermal source clusters (routine flares, furnaces, boilers) and abnormality status.
     """
-    if only_abnormal:
-        return persistence_service.get_abnormal_clusters()
-    return persistence_service.get_all_clusters()
+    try:
+        if only_abnormal:
+            clusters = persistence_service.get_abnormal_clusters()
+        else:
+            clusters = persistence_service.get_all_clusters()
+        return clusters if clusters is not None else []
+    except Exception:
+        return []
 
 @router.get("/abnormality-watchlist", response_model=List[CanonicalThermalEvent])
 def get_thermal_abnormality_watchlist(db: Session = Depends(get_db)):

@@ -145,7 +145,7 @@ class ExecutiveBriefService:
         for pd in pending_decisions:
             md += f"  - {pd}\n"
 
-        md += "\n---\n*Prototype Decision Support System — SIH-1505 Decision Support Engine*"
+        md += "\n---\n*Industrial Decision Support System — REACT-X Decision Support Engine*"
 
         return ExecutiveSituationBriefResponse(
             incident_id=sim.get("id", f"INC-{asset_id}"),

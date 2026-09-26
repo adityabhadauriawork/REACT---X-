@@ -14,7 +14,7 @@ from app.schemas.thermal_classification import (
 from app.services.ml.thermal_classifier_service import classifier_service
 from app.services.ml.classifier_pipeline import pipeline
 
-router = APIRouter(prefix="/thermal", tags=["AI Thermal Source Classification (SIH26162)"])
+router = APIRouter(prefix="/thermal", tags=["REACT-X AI Thermal Source Classification"])
 
 
 @router.get("/model/status", response_model=ModelStatusResponse)

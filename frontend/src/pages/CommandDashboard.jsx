@@ -290,11 +290,12 @@ export default function CommandDashboard({
         <ExecutiveBriefModal
           isOpen={showExecutiveBrief}
           onClose={() => setShowExecutiveBrief(false)}
-          siteData={siteData}
           simulationResult={simulationResult}
           impactResult={impactResult}
           evacuationPlan={evacuationPlan}
-          currentRole={currentRole}
+          resourcePlan={null}
+          authorizationRecord={null}
+          onExportPDF={handleExportPDF}
         />
       )}
 

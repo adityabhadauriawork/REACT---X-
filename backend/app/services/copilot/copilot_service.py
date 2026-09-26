@@ -264,7 +264,7 @@ class CopilotService:
             fw = res.get("foam_water_requirements") or {}
 
             reply = (
-                f"📋 **INCIDENT COMMAND EXECUTIVE BRIEFING — SIH 1505**\n\n"
+                f"📋 **INCIDENT COMMAND EXECUTIVE BRIEFING — REACT-X**\n\n"
                 f"• **Incident ID:** {res.get('incident_id', 'INC-ACTIVE')}\n"
                 f"• **Facility / Source:** {sim.get('source_asset_id', 'T-04')} • {sim.get('chemical_name', 'Ammonia')} ({sim.get('incident_type', 'PIPELINE_LEAK')})\n"
                 f"• **Severity Score:** **{risk.get('overall_score', 75)}/100 — {risk.get('risk_category', 'HIGH')}**\n"
@@ -292,7 +292,7 @@ class CopilotService:
             
             if not sim:
                 reply = (
-                    "👋 **SIH-1505 Emergency Copilot Ready.**\n\n"
+                    "👋 **REACT-X Emergency Copilot Ready.**\n\n"
                     "No active accident scenario has been simulated yet. You can:\n"
                     "1. Select a preset (e.g. **T-04 Ammonia**, **T-03 LPG**, **T-01 Benzene**).\n"
                     "2. Run a custom release scenario in the Scenario Simulator.\n"

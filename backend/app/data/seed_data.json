@@ -717,7 +717,7 @@
   "preset_scenarios": [
     {
       "id": "SCEN-PRIMARY-01",
-      "title": "T-04 Ammonia Cryogenic Header Rupture (Primary SIH Demo)",
+      "title": "T-04 Ammonia Cryogenic Header Rupture (Primary REACT-X Reference Scenario)",
       "asset_id": "T-04",
       "chemical_id": "CHEM-NH3",
       "incident_type": "PIPELINE_LEAK",

@@ -349,22 +349,12 @@ export default function CommandMapWorkspace({
       >
         <MapController center={center} zoom={zoom} />
 
-        {/* Dynamic Light / Dark Basemap Tiles */}
-        {isDark ? (
-          <TileLayer
-            key="carto-dark"
-            attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            maxZoom={19}
-          />
-        ) : (
-          <TileLayer
-            key="osm-light"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            maxZoom={19}
-          />
-        )}
+        {/* OpenStreetMap Basemap Layer */}
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
+        />
 
         {/* 1. Industrial Facilities Fences & Markers */}
         {layers.facilities && facilities.map((fac) => {

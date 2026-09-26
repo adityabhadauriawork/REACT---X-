@@ -15,7 +15,7 @@ from app.services.satellite.clustering_engine import clustering_engine
 from app.services.satellite.source_attribution_engine import source_attribution_engine
 from app.models.thermal_source import ThermalSourceModel
 
-router = APIRouter(prefix="/thermal/sources", tags=["SIH26162 Spatiotemporal Thermal Sources"])
+router = APIRouter(prefix="/thermal/sources", tags=["REACT-X Spatiotemporal Thermal Sources"])
 
 @router.get("", response_model=List[ThermalSourceObject])
 def get_thermal_sources(

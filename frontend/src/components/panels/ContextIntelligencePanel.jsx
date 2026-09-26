@@ -66,8 +66,8 @@ export default function ContextIntelligencePanel({
 
   const rawClass = liveClassification?.predicted_class || event?.classification;
   const isInsufficient = liveClassification?.classification_state === 'INSUFFICIENT_DATA' || rawClass === 'INSUFFICIENT_EVIDENCE';
-  const displayedClass = isInsufficient 
-    ? 'INSUFFICIENT EVIDENCE (OTHER / UNKNOWN)' 
+  const displayedClass = isInsufficient
+    ? 'INSUFFICIENT EVIDENCE (OTHER / UNKNOWN)'
     : (rawClass && rawClass !== 'UNCLASSIFIED' ? rawClass.replace(/_/g, ' ') : 'OTHER / UNKNOWN ANOMALY');
 
   const displayedConfidence = liveClassification?.model_confidence
@@ -78,7 +78,7 @@ export default function ContextIntelligencePanel({
   const title = displayedClass || source?.source_status || facility?.name || 'Selected Entity';
 
   // Geodesic distance calculation to facility
-  const distanceToFacilityM = event?.facility_distance_m !== undefined 
+  const distanceToFacilityM = event?.facility_distance_m !== undefined
     ? Math.round(event.facility_distance_m)
     : 0;
 
@@ -104,11 +104,10 @@ export default function ContextIntelligencePanel({
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex items-start justify-between gap-3">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-              isFire 
-                ? 'bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800' 
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${isFire
+                ? 'bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
                 : 'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
-            }`}>
+              }`}>
               {isFire ? 'CRITICAL HAZARD' : 'THERMAL INTELLIGENCE'}
             </span>
             <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 font-semibold">
@@ -138,41 +137,36 @@ export default function ContextIntelligencePanel({
       <div className="flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 overflow-x-auto">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`py-2.5 px-3 text-xs font-bold border-b-2 cursor-pointer transition-all whitespace-nowrap ${
-            activeTab === 'overview' ? 'border-blue-600 text-blue-700 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-          }`}
+          className={`py-2.5 px-3 text-xs font-bold border-b-2 cursor-pointer transition-all whitespace-nowrap ${activeTab === 'overview' ? 'border-blue-600 text-blue-700 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
         >
           1. Overview
         </button>
         <button
           onClick={() => setActiveTab('classification')}
-          className={`py-2.5 px-3 text-xs font-bold border-b-2 cursor-pointer transition-all whitespace-nowrap ${
-            activeTab === 'classification' ? 'border-blue-600 text-blue-700 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-          }`}
+          className={`py-2.5 px-3 text-xs font-bold border-b-2 cursor-pointer transition-all whitespace-nowrap ${activeTab === 'classification' ? 'border-blue-600 text-blue-700 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
         >
           2. 7-Class AI
         </button>
         <button
           onClick={() => setActiveTab('evidence')}
-          className={`py-2.5 px-3 text-xs font-bold border-b-2 cursor-pointer transition-all whitespace-nowrap ${
-            activeTab === 'evidence' ? 'border-blue-600 text-blue-700 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-          }`}
+          className={`py-2.5 px-3 text-xs font-bold border-b-2 cursor-pointer transition-all whitespace-nowrap ${activeTab === 'evidence' ? 'border-blue-600 text-blue-700 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
         >
           3. Evidence
         </button>
         <button
           onClick={() => setActiveTab('domino')}
-          className={`py-2.5 px-3 text-xs font-bold border-b-2 cursor-pointer transition-all whitespace-nowrap ${
-            activeTab === 'domino' ? 'border-blue-600 text-blue-700 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-          }`}
+          className={`py-2.5 px-3 text-xs font-bold border-b-2 cursor-pointer transition-all whitespace-nowrap ${activeTab === 'domino' ? 'border-blue-600 text-blue-700 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
         >
           4. Cascade
         </button>
         <button
           onClick={() => setActiveTab('response')}
-          className={`py-2.5 px-3 text-xs font-bold border-b-2 cursor-pointer transition-all whitespace-nowrap ${
-            activeTab === 'response' ? 'border-blue-600 text-blue-700 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-          }`}
+          className={`py-2.5 px-3 text-xs font-bold border-b-2 cursor-pointer transition-all whitespace-nowrap ${activeTab === 'response' ? 'border-blue-600 text-blue-700 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
         >
           5. Response & SOS
         </button>
@@ -222,11 +216,10 @@ export default function ContextIntelligencePanel({
             <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
               <div className="font-bold text-slate-800 dark:text-slate-200 flex justify-between items-center">
                 <span>Spatial Distance & Boundary Intelligence</span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  isInsideFence 
-                    ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200' 
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isInsideFence
+                    ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200'
                     : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200'
-                }`}>
+                  }`}>
                   {isInsideFence ? 'INSIDE BOUNDARY' : 'OUTSIDE BUFFER'}
                 </span>
               </div>
@@ -254,11 +247,10 @@ export default function ContextIntelligencePanel({
                     <button
                       key={evt.event_id}
                       onClick={() => onSelectThermalEvent && onSelectThermalEvent(evt)}
-                      className={`w-full text-left p-2 rounded-lg border text-[11px] flex items-center justify-between cursor-pointer transition-all ${
-                        event?.event_id === evt.event_id 
-                          ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-200 font-bold' 
+                      className={`w-full text-left p-2 rounded-lg border text-[11px] flex items-center justify-between cursor-pointer transition-all ${event?.event_id === evt.event_id
+                          ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-200 font-bold'
                           : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
-                      }`}
+                        }`}
                     >
                       <div>
                         <div className="flex items-center gap-1.5">
@@ -455,7 +447,7 @@ export default function ContextIntelligencePanel({
 
             <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
               <span className="font-bold text-slate-900 dark:text-slate-100 block">Threatened Cascade Nodes</span>
-              
+
               <div className="space-y-2">
                 {(cascadePathways?.threatened_nodes || [
                   { name: 'PU-02 Ammonia Synthesis Loop', relation: 'feeds', distance_m: 45, cascade_probability_pct: 85.0, criticality: 'CRITICAL' },
