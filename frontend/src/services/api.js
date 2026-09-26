@@ -1438,6 +1438,36 @@ export const api = {
     const res = await fetch(`${API_BASE}/national/facilities/${encodeURIComponent(facilityId)}`);
     if (!res.ok) throw new Error(`Failed to load national facility ${facilityId}: ${res.statusText}`);
     return res.json();
+  },
+
+  async getFacilityThermalHealth(facilityId) {
+    const res = await fetch(`${API_BASE}/thermal/facilities/${encodeURIComponent(facilityId)}/thermal-health`);
+    if (!res.ok) throw new Error(`Failed to load facility thermal health for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFusedHazardAssessment(facilityId) {
+    const res = await fetch(`${API_BASE}/fusion/facilities/${encodeURIComponent(facilityId)}/current`);
+    if (!res.ok) throw new Error(`Failed to load fused hazard assessment for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getHazardPrediction(facilityId) {
+    const res = await fetch(`${API_BASE}/prediction/facilities/${encodeURIComponent(facilityId)}/current`);
+    if (!res.ok) throw new Error(`Failed to load hazard prediction for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getAdaptiveDecision(facilityId) {
+    const res = await fetch(`${API_BASE}/adaptive/facilities/${encodeURIComponent(facilityId)}/current`);
+    if (!res.ok) throw new Error(`Failed to load adaptive decision for ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityTelemetry(facilityId) {
+    const res = await fetch(`${API_BASE}/telemetry/facilities/${encodeURIComponent(facilityId)}/latest`);
+    if (!res.ok) throw new Error(`Failed to load facility telemetry for ${facilityId}: ${res.statusText}`);
+    return res.json();
   }
 };
 

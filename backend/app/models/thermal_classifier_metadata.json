@@ -3,7 +3,7 @@
   "model_version": "v1.0.0",
   "dataset_version": "IHS_INDIA_2026_v1",
   "feature_version": "THERMAL_FEATURES_v1",
-  "trained_at": "2026-09-26T05:50:59.382379Z",
+  "trained_at": "2026-09-26T06:37:15.845037Z",
   "primary_model_type": "HistGradientBoostingClassifier",
   "fallback_model_type": "RandomForestClassifier",
   "calibration_method": "CalibratedClassifierCV (Sigmoid / Platt)",

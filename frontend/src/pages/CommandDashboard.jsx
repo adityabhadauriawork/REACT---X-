@@ -89,16 +89,51 @@ export default function CommandDashboard({
 
   const activeFacility = useMemo(() => {
     if (isNationalView) return null;
-    return facilities.find(f => f.id === selectedFacilityId) || facilities[0];
+    return facilities.find(f => f.id === selectedFacilityId) || null;
   }, [facilities, selectedFacilityId, isNationalView]);
 
   const activeThermalEvent = useMemo(() => {
-    return thermalEvents.find(e => e.event_id === selectedEventId) || thermalEvents[0];
-  }, [thermalEvents, selectedEventId]);
+    if (!activeFacility) {
+      if (selectedEventId) {
+        return thermalEvents.find(e => e.event_id === selectedEventId) || null;
+      }
+      return null;
+    }
+    // If selectedEventId is set, check if it matches an event
+    if (selectedEventId) {
+      const found = thermalEvents.find(e => e.event_id === selectedEventId);
+      if (found) return found;
+    }
+    // Find thermal event near this facility within 50km
+    if (activeFacility.coordinates && activeFacility.coordinates.length === 2) {
+      const [facLat, facLon] = activeFacility.coordinates;
+      const nearby = thermalEvents.filter(evt => {
+        if (evt.attributed_facility_id === activeFacility.id) return true;
+        const dLat = (evt.latitude - facLat) * (Math.PI / 180);
+        const dLon = (evt.longitude - facLon) * (Math.PI / 180);
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(facLat * Math.PI / 180) * Math.cos(evt.latitude * Math.PI / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const distKm = 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return distKm <= 50;
+      });
+      if (nearby.length > 0) return nearby[0];
+    }
+    return null;
+  }, [activeFacility, selectedEventId, thermalEvents]);
 
   const activeThermalSource = useMemo(() => {
-    return thermalSources.find(s => s.source_id === selectedSourceId) || thermalSources[0];
-  }, [thermalSources, selectedSourceId]);
+    if (selectedSourceId) {
+      const found = thermalSources.find(s => s.source_id === selectedSourceId);
+      if (found) return found;
+    }
+    if (activeFacility) {
+      const found = thermalSources.find(s => s.facility_id === activeFacility.id || s.primary_attributed_facility_id === activeFacility.id);
+      if (found) return found;
+    }
+    return thermalSources[0] || null;
+  }, [thermalSources, selectedSourceId, activeFacility]);
 
   // Center coords and zoom based on selection
   const mapCenter = useMemo(() => {
@@ -285,9 +320,11 @@ export default function CommandDashboard({
             simulationResult={simulationResult}
             cascadePathways={cascadePathways}
             onClose={() => setIsContextPanelOpen(false)}
-            onSelectThermalEvent={(evt) => setSelectedEventId(evt.event_id)}
+            onBackToNationalGrid={() => setSelectedFacilityId('ALL_INDIA')}
+            onSelectThermalEvent={(evt) => setSelectedEventId(evt?.event_id || evt)}
             onSelectFacility={(id) => {
               setSelectedFacilityId(id);
+              setSelectedEventId(null);
               setIsContextPanelOpen(true);
             }}
             onRunSimulation={handleRunSimulation}
