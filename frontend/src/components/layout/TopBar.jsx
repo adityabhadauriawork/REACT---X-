@@ -79,13 +79,16 @@ export default function TopBar({
           {/* Facility Selector */}
           <div className="relative group">
             <select
-              value={selectedFacilityId || (activeFacility?.id || '')}
+              value={selectedFacilityId || 'ALL_INDIA'}
               onChange={(e) => onSelectFacility && onSelectFacility(e.target.value)}
               className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-transparent hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer pr-4 focus:outline-none appearance-none"
             >
+              <option value="ALL_INDIA" className="bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 font-bold">
+                🇮🇳 Pan-India Overview ({facilities.length} Facilities)
+              </option>
               {facilities.map(f => (
                 <option key={f.id} value={f.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-                  {f.name} ({f.location || 'India'})
+                  {f.name} ({f.state || f.location || 'India'})
                 </option>
               ))}
             </select>

@@ -517,6 +517,12 @@ class DemoReplayService:
         return self.state
 
     def start_replay(self, scenario_id: str = "SCENARIO-DAHEJ-AMMONIA-CRYO-01", speed: float = 1.0) -> DemoReplayState:
+        # If scenario is already selected and paused mid-flight, resume smoothly
+        if self.current_scenario_id == scenario_id and self.state.status == "PAUSED" and self.state.current_step > 0:
+            self.state.status = "RUNNING"
+            self.state.replay_speed = speed
+            return self.state
+
         self.current_scenario_id = scenario_id
         meta = self._scenario_meta_cache.get(scenario_id, self._scenario_meta_cache["SCENARIO-DAHEJ-AMMONIA-CRYO-01"])
         timeline = self._step_timeline_cache.get(scenario_id, [])

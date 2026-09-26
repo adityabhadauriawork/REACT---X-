@@ -81,10 +81,10 @@ export default function DemoCommandRoom({ onSwitchToIndiaOps, onLogout, user }) 
   const handleScenarioChange = async (newScenarioId) => {
     setSelectedScenarioId(newScenarioId);
     try {
-      const st = await api.startDemoReplay(newScenarioId, speed);
-      // Immediately reset to IDLE at step 0 of new scenario
-      const resetSt = await api.resetDemoReplay();
-      setReplayState(resetSt);
+      // Start the new scenario and immediately pause it so step 0 is loaded and ready
+      await api.startDemoReplay(newScenarioId, speed);
+      const st = await api.pauseDemoReplay();
+      setReplayState(st);
       setFailureFlags({
         inject_missing_telemetry: false,
         inject_stale_telemetry: false,
@@ -92,10 +92,11 @@ export default function DemoCommandRoom({ onSwitchToIndiaOps, onLogout, user }) 
         inject_conflicting_evidence: false,
         inject_satellite_unavailable: false
       });
-      setActionNotice({ type: 'success', msg: `Switched scenario to: ${resetSt.facility_name || newScenarioId}` });
+      setActionNotice({ type: 'success', msg: `Switched scenario to: ${st.facility_name || newScenarioId}` });
       setTimeout(() => setActionNotice(null), 3500);
     } catch (e) {
       console.error('Scenario switch error:', e);
+      setActionNotice({ type: 'error', msg: `Failed to load scenario: ${e.message || 'Server error'}` });
     }
   };
 
@@ -203,7 +204,9 @@ export default function DemoCommandRoom({ onSwitchToIndiaOps, onLogout, user }) 
     if (replayState.current_step < 3) return;
     setIsComputingEvac(true);
     try {
-      const plan = await api.generateEvacuationRoute(replayState.facility_id || 'FAC-IN-DAHEJ-001', 'T-04');
+      const facilityId = replayState.facility_id || 'FAC-IN-DAHEJ-001';
+      const assetId = facilityId.includes('HAZ') ? 'TANK-LNG-02' : facilityId.includes('VAD') ? 'FLARE-01' : 'T-04';
+      const plan = await api.generateEvacuationRoute(facilityId, assetId);
       setReplayState(prev => ({
         ...prev,
         active_evacuation: plan
@@ -229,7 +232,10 @@ export default function DemoCommandRoom({ onSwitchToIndiaOps, onLogout, user }) 
     if (replayState.current_step < 3) return;
     setIsExportingPDF(true);
     try {
-      await api.exportPrePlanPDF(replayState.facility_id || 'FAC-IN-DAHEJ-001', 'T-04', 'CHEM-NH3');
+      const facilityId = replayState.facility_id || 'FAC-IN-DAHEJ-001';
+      const assetId = facilityId.includes('HAZ') ? 'TANK-LNG-02' : facilityId.includes('VAD') ? 'FLARE-01' : 'T-04';
+      const chemId = facilityId.includes('HAZ') ? 'CHEM-LNG' : facilityId.includes('VAD') ? 'CHEM-CH4' : 'CHEM-NH3';
+      await api.exportPrePlanPDF(facilityId, assetId, chemId);
       setActionNotice({ type: 'success', msg: 'Official ERDMP Pre-Plan PDF exported & downloaded successfully.' });
       setTimeout(() => setActionNotice(null), 5000);
     } catch (e) {

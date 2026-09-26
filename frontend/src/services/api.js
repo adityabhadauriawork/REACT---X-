@@ -1329,6 +1329,115 @@ export const api = {
     });
     if (!res.ok) throw new Error(`Failed to inject failure flags: ${res.statusText}`);
     return res.json();
+  },
+
+  // ==========================================
+  // 16. CANONICAL SATELLITE & THERMAL INTELLIGENCE
+  // ==========================================
+  async getThermalEvents(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const url = `${API_BASE}/thermal/events${query ? `?${query}` : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to load thermal events: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalEventsGeoJSON() {
+    const res = await fetch(`${API_BASE}/thermal/events/geojson`);
+    if (!res.ok) throw new Error(`Failed to load thermal GeoJSON: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalEventDetail(eventId) {
+    const res = await fetch(`${API_BASE}/thermal/events/${encodeURIComponent(eventId)}`);
+    if (!res.ok) throw new Error(`Failed to load thermal event ${eventId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getIndustrialFacilities() {
+    const res = await fetch(`${API_BASE}/thermal/facilities`);
+    if (!res.ok) throw new Error(`Failed to load industrial facilities: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getFacilityProfile(facilityId) {
+    const res = await fetch(`${API_BASE}/thermal/facilities/${encodeURIComponent(facilityId)}`);
+    if (!res.ok) throw new Error(`Failed to load facility ${facilityId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getPersistentThermalSources(onlyAbnormal = false) {
+    const res = await fetch(`${API_BASE}/thermal/persistent-sources?only_abnormal=${onlyAbnormal}`);
+    if (!res.ok) throw new Error(`Failed to load persistent thermal sources: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getThermalSources() {
+    return this.getPersistentThermalSources();
+  },
+
+  async getAbnormalityWatchlist() {
+    const res = await fetch(`${API_BASE}/thermal/abnormality-watchlist`);
+    if (!res.ok) throw new Error(`Failed to load abnormality watchlist: ${res.statusText}`);
+    return res.json();
+  },
+
+  async classifyThermalEvent(eventId) {
+    const res = await fetch(`${API_BASE}/thermal/classify/${encodeURIComponent(eventId)}`, {
+      method: 'POST'
+    });
+    if (!res.ok) {
+      // Fallback to GET if POST is not permitted
+      const getRes = await fetch(`${API_BASE}/thermal/classify/${encodeURIComponent(eventId)}`);
+      if (!getRes.ok) throw new Error(`Failed to classify thermal event ${eventId}`);
+      return getRes.json();
+    }
+    return res.json();
+  },
+
+  async getNightfireCharacterization(eventId) {
+    const res = await fetch(`${API_BASE}/thermal/nightfire/${encodeURIComponent(eventId)}`);
+    if (!res.ok) throw new Error(`Failed to load Nightfire physical data for ${eventId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getMultiSatelliteCorroboration(eventId) {
+    const res = await fetch(`${API_BASE}/thermal/multi-satellite/${encodeURIComponent(eventId)}`);
+    if (!res.ok) throw new Error(`Failed to load multi-satellite corroboration for ${eventId}: ${res.statusText}`);
+    return res.json();
+  },
+
+  async executeEmergencyHandoff(payload) {
+    const res = await fetch(`${API_BASE}/thermal/handoff`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`Failed to execute emergency handoff: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getSatelliteFeedHealth() {
+    const res = await fetch(`${API_BASE}/thermal/health`);
+    if (!res.ok) throw new Error(`Failed to load satellite feed health: ${res.statusText}`);
+    return res.json();
+  },
+
+  // ==========================================
+  // 17. NATIONAL FACILITY REGISTRY
+  // ==========================================
+  async getNationalFacilities(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const url = `${API_BASE}/national/facilities${query ? `?${query}` : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to load national facilities: ${res.statusText}`);
+    return res.json();
+  },
+
+  async getNationalFacilityConfig(facilityId) {
+    const res = await fetch(`${API_BASE}/national/facilities/${encodeURIComponent(facilityId)}`);
+    if (!res.ok) throw new Error(`Failed to load national facility ${facilityId}: ${res.statusText}`);
+    return res.json();
   }
 };
 

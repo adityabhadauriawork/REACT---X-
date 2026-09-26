@@ -26,8 +26,8 @@ export default function CommandDashboard({
   const [facilities, setFacilities] = useState([]);
   const [persistentClusters, setPersistentClusters] = useState([]);
   
-  // Selections
-  const [selectedFacilityId, setSelectedFacilityId] = useState('FAC-IN-DAHEJ-001');
+  // Selections: Default to ALL_INDIA for Pan-India overview on startup
+  const [selectedFacilityId, setSelectedFacilityId] = useState('ALL_INDIA');
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [selectedSourceId, setSelectedSourceId] = useState(null);
   const [contextTab, setContextTab] = useState('overview');
@@ -74,9 +74,6 @@ export default function CommandDashboard({
         setFacilities(facsRes);
         setPersistentClusters(clustersRes);
 
-        if (facsRes && facsRes.length > 0) {
-          setSelectedFacilityId(facsRes[0].id);
-        }
         if (thermalRes && thermalRes.length > 0) {
           setSelectedEventId(thermalRes[0].event_id);
         }
@@ -87,17 +84,13 @@ export default function CommandDashboard({
     fetchData();
   }, []);
 
-  // Compute selected items
+  // Compute selected facility (null when ALL_INDIA)
+  const isNationalView = selectedFacilityId === 'ALL_INDIA' || !selectedFacilityId;
+
   const activeFacility = useMemo(() => {
-    return facilities.find(f => f.id === selectedFacilityId) || facilities[0] || {
-      id: 'FAC-IN-DAHEJ-001',
-      name: 'Dahej Petrochemical Complex',
-      location: 'Dahej PCPIR, Gujarat',
-      coordinates: [21.6850, 72.5750],
-      current_status: 'NOMINAL_OPERATIONS',
-      current_abnormality_score: 12.0
-    };
-  }, [facilities, selectedFacilityId]);
+    if (isNationalView) return null;
+    return facilities.find(f => f.id === selectedFacilityId) || facilities[0];
+  }, [facilities, selectedFacilityId, isNationalView]);
 
   const activeThermalEvent = useMemo(() => {
     return thermalEvents.find(e => e.event_id === selectedEventId) || thermalEvents[0];
@@ -107,13 +100,21 @@ export default function CommandDashboard({
     return thermalSources.find(s => s.source_id === selectedSourceId) || thermalSources[0];
   }, [thermalSources, selectedSourceId]);
 
-  // Center coords on selected facility
+  // Center coords and zoom based on selection
   const mapCenter = useMemo(() => {
+    if (isNationalView) {
+      return [22.8000, 79.5000]; // Center of India
+    }
     if (activeFacility && activeFacility.coordinates) {
       return activeFacility.coordinates;
     }
     return [21.6850, 72.5750];
-  }, [activeFacility]);
+  }, [activeFacility, isNationalView]);
+
+  const mapZoom = useMemo(() => {
+    if (isNationalView) return 5;
+    return 13;
+  }, [isNationalView]);
 
   // Handle Search Result Selection
   const handleSearchSelect = (facilityItem) => {
@@ -125,9 +126,10 @@ export default function CommandDashboard({
 
   // Run Simulation Handler
   const handleRunSimulation = async () => {
+    const facId = activeFacility ? activeFacility.id : 'FAC-DAHEJ-PCH01';
     try {
       const res = await api.runSimulation({
-        facility_id: selectedFacilityId,
+        facility_id: facId,
         asset_id: 'T-04',
         chemical_id: 'CHEM-NH3',
         release_type: 'CONTINUOUS_TOXIC_PLUME',
@@ -147,8 +149,9 @@ export default function CommandDashboard({
 
   // Generate Evacuation Handler
   const handleGenerateEvacuation = async () => {
+    const facId = activeFacility ? activeFacility.id : 'FAC-DAHEJ-PCH01';
     try {
-      const plan = await api.generateEvacuationRoute(selectedFacilityId, 'T-04');
+      const plan = await api.generateEvacuationRoute(facId, 'T-04');
       setEvacuationPlan(plan);
       return plan;
     } catch (err) {
@@ -158,8 +161,9 @@ export default function CommandDashboard({
 
   // Export PDF Handler
   const handleExportPDF = async () => {
+    const facId = activeFacility ? activeFacility.id : 'FAC-DAHEJ-PCH01';
     try {
-      await api.exportPrePlanPDF(selectedFacilityId, 'T-04', 'CHEM-NH3');
+      await api.exportPrePlanPDF(facId, 'T-04', 'CHEM-NH3');
     } catch (e) {
       console.warn('PDF export download error:', e);
       alert(`PDF export failed: ${e.message || 'Please check backend service.'}`);
@@ -172,9 +176,14 @@ export default function CommandDashboard({
       setShowSOSModal(true);
       return;
     }
+    if (toolKey === 'facilities_all') {
+      setSelectedFacilityId('ALL_INDIA');
+      setIsContextPanelOpen(true);
+      return;
+    }
 
     setIsContextPanelOpen(true);
-    if (toolKey === 'live_thermal' || toolKey === 'facility_status') {
+    if (toolKey === 'live_thermal' || toolKey === 'facility_status' || toolKey === 'facilities_risk') {
       setContextTab('overview');
     } else if (toolKey === 'persistent_sources') {
       setContextTab('overview');
@@ -233,7 +242,7 @@ export default function CommandDashboard({
         <div className="flex-1 h-full w-full relative bg-slate-100 dark:bg-slate-950">
           <CommandMapWorkspace
             center={mapCenter}
-            zoom={14}
+            zoom={mapZoom}
             facilities={facilities}
             thermalEvents={thermalEvents}
             thermalSources={thermalSources}
@@ -268,6 +277,7 @@ export default function CommandDashboard({
             event={activeThermalEvent}
             source={activeThermalSource}
             facility={activeFacility}
+            isNationalOverview={isNationalView}
             thermalEvents={thermalEvents}
             thermalSources={thermalSources}
             facilities={facilities}
@@ -276,7 +286,10 @@ export default function CommandDashboard({
             cascadePathways={cascadePathways}
             onClose={() => setIsContextPanelOpen(false)}
             onSelectThermalEvent={(evt) => setSelectedEventId(evt.event_id)}
-            onSelectFacility={(id) => setSelectedFacilityId(id)}
+            onSelectFacility={(id) => {
+              setSelectedFacilityId(id);
+              setIsContextPanelOpen(true);
+            }}
             onRunSimulation={handleRunSimulation}
             onGenerateEvacuation={handleGenerateEvacuation}
             onExportPDF={handleExportPDF}
@@ -305,7 +318,7 @@ export default function CommandDashboard({
           isOpen={showSOSModal}
           onClose={() => setShowSOSModal(false)}
           incidentPacket={null}
-          facility={activeFacility}
+          facility={activeFacility || facilities[0]}
           isDemo={false}
           onExportPDF={handleExportPDF}
         />

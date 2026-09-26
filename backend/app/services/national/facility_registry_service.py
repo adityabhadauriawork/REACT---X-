@@ -41,7 +41,25 @@ class FacilityRegistryService:
             is_reference_environment=True,
             is_simulated=False
         ),
-        # 2. Gujarat - Jamnagar Mega Refinery
+        # 2. Gujarat - Petronet Dahej LNG Terminal
+        FacilityConfig(
+            facility_id="FAC-IN-DAHEJ-LNG02",
+            facility_name="Petronet Dahej LNG Cryogenic Regasification Terminal",
+            facility_type=FacilityType.REFINERY,
+            country="India",
+            state="Gujarat",
+            district="Bharuch",
+            city_locality="Dahej Port Corridor",
+            latitude=21.6720,
+            longitude=72.5320,
+            criticality="TIER_1_CRITICAL",
+            hazard_profile=[HazardProfileType.THERMAL, HazardProfileType.GAS, HazardProfileType.PRESSURE],
+            capabilities=[FacilityCapability.SATELLITE, FacilityCapability.TELEMETRY],
+            connectivity_status=FacilityConnectivityStatus.PARTIAL_TELEMETRY,
+            baseline_stage=FacilityBaselineStage.BASELINE_READY,
+            enabled=True
+        ),
+        # 3. Gujarat - Jamnagar Mega Refinery
         FacilityConfig(
             facility_id="FAC-IN-JAMNAGAR-001",
             facility_name="Jamnagar Integrated Refinery Complex",
@@ -62,7 +80,43 @@ class FacilityRegistryService:
             is_reference_environment=False,
             is_simulated=False
         ),
-        # 3. Maharashtra - Mumbai BPCL Refinery
+        # 4. Gujarat - ONGC Hazira Complex
+        FacilityConfig(
+            facility_id="FAC-IN-HAZIRA-001",
+            facility_name="ONGC Hazira Gas Processing & Petrochemical Complex",
+            facility_type=FacilityType.PETROCHEMICAL,
+            country="India",
+            state="Gujarat",
+            district="Surat",
+            city_locality="Hazira Industrial Belt",
+            latitude=21.1200,
+            longitude=72.6700,
+            criticality="TIER_1_CRITICAL",
+            hazard_profile=[HazardProfileType.THERMAL, HazardProfileType.FIRE, HazardProfileType.GAS],
+            capabilities=[FacilityCapability.SATELLITE, FacilityCapability.TELEMETRY],
+            connectivity_status=FacilityConnectivityStatus.PARTIAL_TELEMETRY,
+            baseline_stage=FacilityBaselineStage.BASELINE_READY,
+            enabled=True
+        ),
+        # 5. Gujarat - IOCL Vadodara Refinery
+        FacilityConfig(
+            facility_id="FAC-IN-VADODARA-001",
+            facility_name="IOCL Gujarat Refinery & Petrochemical Complex",
+            facility_type=FacilityType.REFINERY,
+            country="India",
+            state="Gujarat",
+            district="Vadodara",
+            city_locality="Koyali Hub",
+            latitude=22.3550,
+            longitude=73.1350,
+            criticality="TIER_1_CRITICAL",
+            hazard_profile=[HazardProfileType.THERMAL, HazardProfileType.FIRE, HazardProfileType.PRESSURE],
+            capabilities=[FacilityCapability.SATELLITE, FacilityCapability.TELEMETRY],
+            connectivity_status=FacilityConnectivityStatus.PARTIAL_TELEMETRY,
+            baseline_stage=FacilityBaselineStage.BASELINE_READY,
+            enabled=True
+        ),
+        # 6. Maharashtra - Mumbai BPCL Refinery
         FacilityConfig(
             facility_id="FAC-IN-MUMBAI-001",
             facility_name="Mumbai Chembur Coastal Refinery",
@@ -80,7 +134,7 @@ class FacilityRegistryService:
             baseline_stage=FacilityBaselineStage.BASELINE_READY,
             enabled=True
         ),
-        # 4. Odisha - Rourkela Integrated Steel Plant
+        # 7. Odisha - Rourkela Integrated Steel Plant
         FacilityConfig(
             facility_id="FAC-IN-ROURKELA-001",
             facility_name="Rourkela Integrated Steel Plant",
@@ -98,7 +152,25 @@ class FacilityRegistryService:
             baseline_stage=FacilityBaselineStage.BASELINE_READY,
             enabled=True
         ),
-        # 5. Chhattisgarh - Korba Super Thermal Power
+        # 8. Odisha - Paradip IOCL Refinery
+        FacilityConfig(
+            facility_id="FAC-IN-PARADIP-001",
+            facility_name="Indian Oil Paradip Refinery & Petrochemical Complex",
+            facility_type=FacilityType.PETROCHEMICAL,
+            country="India",
+            state="Odisha",
+            district="Jagatsinghpur",
+            city_locality="Paradip Port",
+            latitude=20.2854,
+            longitude=86.6432,
+            criticality="TIER_1_CRITICAL",
+            hazard_profile=[HazardProfileType.THERMAL, HazardProfileType.FIRE, HazardProfileType.GAS],
+            capabilities=[FacilityCapability.SATELLITE, FacilityCapability.TELEMETRY],
+            connectivity_status=FacilityConnectivityStatus.PARTIAL_TELEMETRY,
+            baseline_stage=FacilityBaselineStage.BASELINE_READY,
+            enabled=True
+        ),
+        # 9. Chhattisgarh - Korba Super Thermal Power
         FacilityConfig(
             facility_id="FAC-IN-KORBA-001",
             facility_name="Korba Super Thermal Power Plant",
@@ -116,7 +188,43 @@ class FacilityRegistryService:
             baseline_stage=FacilityBaselineStage.BASELINE_READY,
             enabled=True
         ),
-        # 6. Tamil Nadu - Manali Petrochemicals
+        # 10. Jharkhand - Tata Steel Jamshedpur
+        FacilityConfig(
+            facility_id="FAC-IN-JSR-STEEL01",
+            facility_name="Tata Steel Jamshedpur Integrated Steel Works",
+            facility_type=FacilityType.STEEL,
+            country="India",
+            state="Jharkhand",
+            district="East Singhbhum",
+            city_locality="Jamshedpur",
+            latitude=22.7800,
+            longitude=86.2000,
+            criticality="TIER_1_CRITICAL",
+            hazard_profile=[HazardProfileType.THERMAL, HazardProfileType.EQUIPMENT],
+            capabilities=[FacilityCapability.SATELLITE],
+            connectivity_status=FacilityConnectivityStatus.SATELLITE_ONLY,
+            baseline_stage=FacilityBaselineStage.BASELINE_READY,
+            enabled=True
+        ),
+        # 11. Jharkhand - BCCL Jharia Mining
+        FacilityConfig(
+            facility_id="FAC-IN-JHARIA-MINE01",
+            facility_name="BCCL Jharia Opencast Mining & Seam Sector",
+            facility_type=FacilityType.MINING,
+            country="India",
+            state="Jharkhand",
+            district="Dhanbad",
+            city_locality="Jharia",
+            latitude=23.7500,
+            longitude=86.4200,
+            criticality="TIER_2_MAJOR",
+            hazard_profile=[HazardProfileType.THERMAL, HazardProfileType.FIRE],
+            capabilities=[FacilityCapability.SATELLITE],
+            connectivity_status=FacilityConnectivityStatus.SATELLITE_ONLY,
+            baseline_stage=FacilityBaselineStage.BASELINE_READY,
+            enabled=True
+        ),
+        # 12. Tamil Nadu - Manali Petrochemicals
         FacilityConfig(
             facility_id="FAC-IN-MANALI-001",
             facility_name="Manali Petrochemical & Fertilizers",
@@ -128,13 +236,13 @@ class FacilityRegistryService:
             latitude=13.1650,
             longitude=80.2600,
             criticality="TIER_2_MAJOR",
-            hazard_profile=[HazardProfileType.GAS, HazardProfileType.CHEMICAL if hasattr(HazardProfileType, 'CHEMICAL') else HazardProfileType.PROCESS, HazardProfileType.FIRE],
+            hazard_profile=[HazardProfileType.GAS, HazardProfileType.FIRE],
             capabilities=[FacilityCapability.SATELLITE, FacilityCapability.TELEMETRY],
             connectivity_status=FacilityConnectivityStatus.PARTIAL_TELEMETRY,
             baseline_stage=FacilityBaselineStage.BASELINE_READY,
             enabled=True
         ),
-        # 7. Andhra Pradesh - Visakhapatnam Steel Plant
+        # 13. Andhra Pradesh - Visakhapatnam Steel Plant
         FacilityConfig(
             facility_id="FAC-IN-VIZAG-001",
             facility_name="Visakhapatnam Coastal Steel Plant",
@@ -152,7 +260,7 @@ class FacilityRegistryService:
             baseline_stage=FacilityBaselineStage.BASELINE_READY,
             enabled=True
         ),
-        # 8. Assam - Numaligarh Refinery
+        # 14. Assam - Numaligarh Refinery
         FacilityConfig(
             facility_id="FAC-IN-NUMALIGARH-001",
             facility_name="Numaligarh Eco-Refinery",
@@ -170,7 +278,7 @@ class FacilityRegistryService:
             baseline_stage=FacilityBaselineStage.BASELINE_READY,
             enabled=True
         ),
-        # 9. Rajasthan - Udaipur Zinc Smelter / Mining
+        # 15. Rajasthan - Udaipur Zinc Smelter / Mining
         FacilityConfig(
             facility_id="FAC-IN-UDAIPUR-001",
             facility_name="Debari Zinc Smelter & Complex",
@@ -188,7 +296,7 @@ class FacilityRegistryService:
             baseline_stage=FacilityBaselineStage.BASELINE_READY,
             enabled=True
         ),
-        # 10. Karnataka - Mangalore Chemicals & LNG
+        # 16. Karnataka - Mangalore Chemicals & LNG
         FacilityConfig(
             facility_id="FAC-IN-MANGALORE-001",
             facility_name="Mangalore Coastal Chemicals & Terminal",
@@ -205,13 +313,49 @@ class FacilityRegistryService:
             connectivity_status=FacilityConnectivityStatus.PARTIAL_TELEMETRY,
             baseline_stage=FacilityBaselineStage.BASELINE_READY,
             enabled=True
+        ),
+        # 17. Uttar Pradesh - GAIL Pata Petrochemicals
+        FacilityConfig(
+            facility_id="FAC-IN-PATA-001",
+            facility_name="GAIL Pata Integrated Petrochemical Complex",
+            facility_type=FacilityType.PETROCHEMICAL,
+            country="India",
+            state="Uttar Pradesh",
+            district="Auraiya",
+            city_locality="Pata",
+            latitude=26.6000,
+            longitude=79.5400,
+            criticality="TIER_1_CRITICAL",
+            hazard_profile=[HazardProfileType.THERMAL, HazardProfileType.FIRE, HazardProfileType.GAS],
+            capabilities=[FacilityCapability.SATELLITE, FacilityCapability.TELEMETRY],
+            connectivity_status=FacilityConnectivityStatus.PARTIAL_TELEMETRY,
+            baseline_stage=FacilityBaselineStage.BASELINE_READY,
+            enabled=True
+        ),
+        # 18. West Bengal - Haldia Petrochemicals
+        FacilityConfig(
+            facility_id="FAC-IN-HALDIA-001",
+            facility_name="Haldia Petrochemicals & Refining Complex",
+            facility_type=FacilityType.PETROCHEMICAL,
+            country="India",
+            state="West Bengal",
+            district="Purba Medinipur",
+            city_locality="Haldia Port",
+            latitude=22.0300,
+            longitude=88.0800,
+            criticality="TIER_1_CRITICAL",
+            hazard_profile=[HazardProfileType.THERMAL, HazardProfileType.FIRE, HazardProfileType.CHEMICAL if hasattr(HazardProfileType, 'CHEMICAL') else HazardProfileType.PROCESS],
+            capabilities=[FacilityCapability.SATELLITE, FacilityCapability.TELEMETRY],
+            connectivity_status=FacilityConnectivityStatus.PARTIAL_TELEMETRY,
+            baseline_stage=FacilityBaselineStage.BASELINE_READY,
+            enabled=True
         )
     ]
 
     def seed_initial_facilities_if_empty(self, db: Session) -> int:
-        """Seeds canonical multi-state reference facilities if registry table is empty."""
-        existing = facility_registry_repository.list_facilities(db, limit=1)
-        if len(existing) == 0:
+        """Seeds canonical multi-state reference facilities if registry table is missing any."""
+        existing = facility_registry_repository.list_facilities(db, limit=1000)
+        if len(existing) < len(self.SEEDED_NATIONAL_FACILITIES):
             for fac in self.SEEDED_NATIONAL_FACILITIES:
                 facility_registry_repository.upsert_facility(db, fac)
             return len(self.SEEDED_NATIONAL_FACILITIES)
